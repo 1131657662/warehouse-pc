@@ -1,0 +1,129 @@
+.login-page {
+  display: flex;
+  height: 100vh;
+  background: #fafafa;
+}
+
+/* ───── left brand panel ───── */
+.login-brand {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border-right: 1px solid #eaeaea;
+}
+
+.login-brand__inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  max-width: 400px;
+}
+
+.login-brand__logo-img {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+}
+
+.login-brand__title {
+  color: #171717 !important;
+  font-size: 36px !important;
+  font-weight: 700 !important;
+  margin: 0 !important;
+  line-height: 1.2 !important;
+}
+
+.login-brand__desc {
+  color: #666 !important;
+  font-size: 18px !important;
+}
+
+.login-brand__sub {
+  color: #999 !important;
+  font-size: 14px !important;
+}
+
+/* ───── right form side ───── */
+.login-form-side {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fafafa;
+}
+
+.login-form-card {
+  width: 400px;
+  padding: 40px 36px;
+  background: #fff;
+  border: 1px solid #eaeaea;
+  border-radius: 8px;
+}
+
+.login-form-card__title {
+  margin-bottom: 4px !important;
+  font-size: 24px !important;
+  font-weight: 600 !important;
+  color: #171717 !important;
+}
+
+.login-form-card__hint {
+  display: block;
+  margin-bottom: 24px;
+  color: #666 !important;
+  font-size: 14px !important;
+}
+
+.login-form-card__btn {
+  height: 44px !important;
+  border-radius: 6px !important;
+  font-size: 15px !important;
+  font-weight: 500 !important;
+  margin-top: 8px;
+}
+
+/* form spacing */
+.login-form-card .ant-form-item {
+  margin-bottom: 16px;
+}
+.login-form-card .ant-pro-form-submitter {
+  margin-top: 0;
+}
+
+/* input: match button height 44px */
+.login-form-card .ant-input-affix-wrapper {
+  height: 44px;
+  padding-top: 0;
+  padding-bottom: 0;
+  align-items: center;
+}
+.login-form-card .ant-input-affix-wrapper .ant-input {
+  height: 42px;
+  line-height: 42px;
+}
+
+/* icon & placeholder colors */
+.login-form-card .ant-input-prefix {
+  color: #999;
+}
+.login-form-card input::placeholder {
+  color: #bbb;
+}
+
+/* ───── responsive ───── */
+@media (max-width: 768px) {
+  .login-brand {
+    display: none;
+  }
+  .login-form-side {
+    padding: 24px;
+  }
+  .login-form-card {
+    width: 100%;
+    max-width: 400px;
+    padding: 32px 24px;
+  }
+}

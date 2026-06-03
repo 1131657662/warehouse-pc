@@ -1,0 +1,127 @@
+/**
+ * 茂智物流出库扫码管理系统 — 路由配置
+ * name：面包屑与页面标题；title：浏览器标签（%s 模板）
+ */
+export default [
+  { path: '/', redirect: '/dashboard' },
+  {
+    path: '/dashboard',
+    name: '仪表盘',
+    title: '仪表盘',
+    icon: 'DashboardOutlined',
+    component: './Dashboard',
+  },
+  { path: '/orders/list', redirect: '/orders', hideInMenu: true },
+  {
+    path: '/orders',
+    name: '订单管理',
+    icon: 'SnippetsOutlined',
+    routes: [
+      {
+        path: '/orders',
+        name: '订单列表',
+        title: '订单管理',
+        component: './Orders',
+        hideInMenu: true,
+      },
+      {
+        path: '/orders/create',
+        name: '创建订单',
+        title: '创建订单',
+        component: './Orders/Create',
+        hideInMenu: true,
+      },
+      {
+        path: '/orders/temp-create',
+        name: '临时出库',
+        title: '临时出库',
+        component: './Orders/TempCreate',
+        hideInMenu: true,
+      },
+      {
+        path: '/orders/:id/detail',
+        name: '订单详情',
+        title: '订单详情',
+        component: './Orders/Detail',
+        hideInMenu: true,
+      },
+      {
+        path: '/orders/:id/outbound',
+        name: '出库作业',
+        title: '出库作业',
+        component: './Orders/Outbound',
+        hideInMenu: true,
+      },
+      {
+        path: '/orders/:id/print',
+        name: '打印出库单',
+        title: '打印出库单',
+        component: './Orders/Print',
+        hideInMenu: true,
+      },
+    ],
+  },
+  {
+    path: '/inventory',
+    name: '库存管理',
+    icon: 'InboxOutlined',
+    routes: [
+      { path: '/inventory', redirect: '/inventory/list' },
+      {
+        path: '/inventory/list',
+        name: '库存列表',
+        title: '库存列表',
+        component: './Inventory',
+      },
+      {
+        path: '/inventory/import',
+        name: '批量导入',
+        title: '批量导入',
+        component: './Inventory/Import',
+      },
+      {
+        path: '/inventory/summary',
+        name: '型号汇总',
+        title: '型号汇总',
+        component: './Inventory/Summary',
+      },
+      {
+        path: '/inventory/trace',
+        name: '出库追溯',
+        title: '出库追溯',
+        component: './OutboundTrace',
+      },
+    ],
+  },
+  {
+    path: '/customers',
+    name: '客户管理',
+    title: '客户管理',
+    icon: 'TeamOutlined',
+    component: './Customers',
+  },
+  {
+    path: '/reports',
+    name: '业绩统计',
+    title: '业绩统计',
+    icon: 'BarChartOutlined',
+    component: './Reports/Performance',
+  },
+  {
+    path: '/users',
+    name: '用户权限',
+    title: '用户权限',
+    icon: 'UserOutlined',
+    component: './Users',
+    access: 'isAdmin',
+  },
+  {
+    path: '/report-configs',
+    name: '报表配置',
+    title: '报表配置',
+    icon: 'PrinterOutlined',
+    component: './ReportConfigs',
+    access: 'isAdmin',
+  },
+  { path: '/login', name: '登录', title: '登录', component: './Login', layout: false },
+];
