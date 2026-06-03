@@ -5,6 +5,7 @@ import {
   ReloadOutlined,
   RollbackOutlined,
   ScanOutlined,
+  StopOutlined,
 } from '@ant-design/icons';
 import { ProCard } from '@ant-design/pro-components';
 import AppPageContainer from '@/components/AppPageContainer';
@@ -32,6 +33,7 @@ import OrderStatusTag from '@/components/Order/OrderStatusTag';
 import OutboundScanTable from '@/components/Order/OutboundScanTable';
 import RollPickerDrawer from '@/components/Order/RollPickerDrawer';
 import {
+  cancelOrder,
   getOrderDetail,
   rollbackOrder,
   submitOrder,
@@ -129,6 +131,22 @@ const OrdersDetail: React.FC = () => {
     access.canPcOutbound &&
     order &&
     (order.status === 'pending' || order.status === 'scanning');
+
+  const canCancel =
+    access.canPcOutbound &&
+    order &&
+    (order.status === 'pending' || order.status === 'scanning') &&
+    (order.scanned_count || 0) === 0;
+
+  const handleCancel = async () => {
+    const res = await cancelOrder(orderId);
+    if (res.success) {
+      message.success('订单已取消');
+      await silentRefresh();
+    } else {
+      message.error(res.errorMessage || '取消失败');
+    }
+  };
 
   const handleDownload = async () => {
     if (!order) return;
@@ -237,6 +255,17 @@ const OrdersDetail: React.FC = () => {
               onOk: handleRollback,
             });
           },
+        }
+      : null,
+    canCancel
+      ? {
+          key: 'cancel',
+          icon: <StopOutlined />,
+          label: (
+            <Popconfirm title="确认取消该订单？" onConfirm={handleCancel}>
+              <span style={{ color: '#ff4d4f' }}>取消订单</span>
+            </Popconfirm>
+          ),
         }
       : null,
   ].filter(Boolean) as MenuProps['items'];

@@ -22,6 +22,10 @@ import { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx';
 import { getCustomerList } from '@/services/customers';
 import { importInventory } from '@/services/inventory';
+import {
+  IMPORT_FIELD_ALIASES,
+  pickImportField,
+} from '@/utils/inventoryImportParse';
 
 const { Dragger } = Upload;
 const { Text, Title } = Typography;
@@ -109,16 +113,17 @@ const ImportPage: React.FC = () => {
     codeMap: Map<string, { id: number; name: string }>,
     nameMap: Map<string, { id: number; code: string }>,
   ): ParsedRow => {
-    const str = (key: string, def = '') => String(row[key] ?? def).trim();
+    const str = (aliases: readonly string[], def = '') =>
+      pickImportField(row, [...aliases]) || def;
 
-    const roll = str('卷号');
-    const productName = str('品名');
-    const customerCode = str('客户编码');
-    const customerName = str('客户名称');
-    const weightStr = str('克重');
-    const pieceWeightStr = str('件重(kg)');
-    const qtyStr = str('件数', '1');
-    const damagedStr = str('破损', '0');
+    const roll = str(IMPORT_FIELD_ALIASES.roll_number);
+    const productName = str(IMPORT_FIELD_ALIASES.product_name);
+    const customerCode = str(IMPORT_FIELD_ALIASES.customer_code);
+    const customerName = str(IMPORT_FIELD_ALIASES.customer_name);
+    const weightStr = str(IMPORT_FIELD_ALIASES.weight);
+    const pieceWeightStr = str(IMPORT_FIELD_ALIASES.piece_weight);
+    const qtyStr = str(IMPORT_FIELD_ALIASES.quantity, '1');
+    const damagedStr = str(IMPORT_FIELD_ALIASES.damaged, '0');
 
     const pieceWeight = pieceWeightStr ? parseFloat(pieceWeightStr) : null;
 
@@ -129,11 +134,11 @@ const ImportPage: React.FC = () => {
       product_name: productName,
       weight: null as number | null,
       piece_weight: pieceWeight,
-      specification: str('规格'),
+      specification: str(IMPORT_FIELD_ALIASES.specification),
       roll_number: roll,
       quantity: parseInt(qtyStr) || 1,
       damaged: damagedStr,
-      remark: str('备注'),
+      remark: str(IMPORT_FIELD_ALIASES.remark),
     };
 
     // ❌ 品名为空
@@ -197,8 +202,9 @@ const ImportPage: React.FC = () => {
           return;
         }
         const sheet = wb.Sheets[wb.SheetNames[0]];
-        const jsonData = XLSX.utils.sheet_to_json<Record<string, string>>(sheet, {
+        const jsonData = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
           defval: '',
+          raw: false,
         });
 
         if (jsonData.length === 0) {
@@ -366,7 +372,9 @@ const ImportPage: React.FC = () => {
             <InboxOutlined />
           </p>
           <p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
-          <p className="ant-upload-hint">支持 .xlsx 和 .csv 格式</p>
+          <p className="ant-upload-hint">
+            支持 .xlsx 和 .csv；卷号列请命名为「卷号」（也兼容：条码、卷筒号）。请使用上方模板，首行为表头
+          </p>
         </Dragger>
       </div>
 

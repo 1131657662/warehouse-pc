@@ -103,7 +103,11 @@ const OrdersList: React.FC = () => {
           onClick: () => history.push(`/orders/${record.id}/outbound`),
         });
       }
-      if (record.status === 'pending' && (record.scanned_count || 0) === 0 && access.canPcOutbound) {
+      if (
+        (record.status === 'pending' || record.status === 'scanning') &&
+        (record.scanned_count || 0) === 0 &&
+        access.canPcOutbound
+      ) {
         items.push({
           key: 'cancel',
           icon: <StopOutlined />,
