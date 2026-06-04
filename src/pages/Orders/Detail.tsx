@@ -17,7 +17,6 @@ import {
   Descriptions,
   Dropdown,
   Modal,
-  Popconfirm,
   Space,
   Table,
   Tag,
@@ -49,7 +48,7 @@ const { Paragraph, Text } = Typography;
 
 const OrdersDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { message } = App.useApp();
+  const { message, modal } = App.useApp();
   const access = useAccess();
   const orderId = Number(id);
   const invalidId = !orderId || Number.isNaN(orderId);
@@ -261,11 +260,17 @@ const OrdersDetail: React.FC = () => {
       ? {
           key: 'cancel',
           icon: <StopOutlined />,
-          label: (
-            <Popconfirm title="确认取消该订单？" onConfirm={handleCancel}>
-              <span style={{ color: '#ff4d4f' }}>取消订单</span>
-            </Popconfirm>
-          ),
+          label: '取消订单',
+          danger: true,
+          onClick: () => {
+            modal.confirm({
+              title: '确认取消该订单？',
+              content: `订单号：${order?.order_no || ''}`,
+              okText: '确认取消',
+              okButtonProps: { danger: true },
+              onOk: handleCancel,
+            });
+          },
         }
       : null,
   ].filter(Boolean) as MenuProps['items'];

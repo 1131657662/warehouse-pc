@@ -26,6 +26,11 @@ export default defineConfig({
 
   publicPath: PUBLIC_PATH,
 
+  links: [
+    { rel: 'icon', type: 'image/svg+xml', href: `${PUBLIC_PATH}logo.svg` },
+    { rel: 'apple-touch-icon', href: `${PUBLIC_PATH}logo.svg` },
+  ],
+
   /**
    * @name 兼容性设置
    * @description 设置 ie11 不一定完美兼容，需要检查自己使用的所有依赖

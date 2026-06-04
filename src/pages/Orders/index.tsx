@@ -12,7 +12,7 @@ import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { ProTable } from '@ant-design/pro-components';
 import AppPageContainer from '@/components/AppPageContainer';
 import { history, useAccess } from '@umijs/max';
-import { App, Button, Dropdown, Popconfirm, Space, Typography } from 'antd';
+import { App, Button, Dropdown, Space, Typography } from 'antd';
 import type { MenuProps } from 'antd';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import OrderListFulfillmentCell from '@/components/Order/OrderListFulfillmentCell';
@@ -29,7 +29,7 @@ type OrderItem = API.OrderItem;
 
 const OrdersList: React.FC = () => {
   const actionRef = useRef<ActionType | undefined>(undefined);
-  const { message } = App.useApp();
+  const { message, modal } = App.useApp();
   const access = useAccess();
   const [customers, setCustomers] = useState<API.CustomerItem[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<OrderItem | null>(null);
@@ -111,14 +111,17 @@ const OrdersList: React.FC = () => {
         items.push({
           key: 'cancel',
           icon: <StopOutlined />,
-          label: (
-            <Popconfirm
-              title="确认取消该订单？"
-              onConfirm={() => handleCancel(record.id)}
-            >
-              <span style={{ color: '#ff4d4f' }}>取消订单</span>
-            </Popconfirm>
-          ),
+          label: '取消订单',
+          danger: true,
+          onClick: () => {
+            modal.confirm({
+              title: '确认取消该订单？',
+              content: `订单号：${record.order_no}`,
+              okText: '确认取消',
+              okButtonProps: { danger: true },
+              onOk: () => handleCancel(record.id),
+            });
+          },
         });
       }
       if (items.length === 0) {
@@ -126,7 +129,7 @@ const OrdersList: React.FC = () => {
       }
       return items;
     },
-    [access.canPcOutbound, handleCancel],
+    [access.canPcOutbound, handleCancel, modal],
   );
 
   const baseColumns: ProColumns<OrderItem>[] = useMemo(

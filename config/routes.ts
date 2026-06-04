@@ -123,5 +123,12 @@ export default [
     component: './ReportConfigs',
     access: 'isAdmin',
   },
+  {
+    path: '/account/password',
+    name: '修改密码',
+    title: '修改密码',
+    component: './Account/Password',
+    hideInMenu: true,
+  },
   { path: '/login', name: '登录', title: '登录', component: './Login', layout: false },
 ];
