@@ -123,7 +123,7 @@ const ImportPage: React.FC = () => {
     const weightStr = str(IMPORT_FIELD_ALIASES.weight);
     const pieceWeightStr = str(IMPORT_FIELD_ALIASES.piece_weight);
     const qtyStr = str(IMPORT_FIELD_ALIASES.quantity, '1');
-    const damagedStr = str(IMPORT_FIELD_ALIASES.damaged, '0');
+    const damagedStr = str(IMPORT_FIELD_ALIASES.damaged);
 
     const pieceWeight = pieceWeightStr ? parseFloat(pieceWeightStr) : null;
 
