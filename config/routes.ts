@@ -46,6 +46,13 @@ export default [
         hideInMenu: true,
       },
       {
+        path: '/orders/:id/convert-temp',
+        name: '临时单转正',
+        title: '临时单转正',
+        component: './Orders/ConvertTemp',
+        hideInMenu: true,
+      },
+      {
         path: '/orders/:id/outbound',
         name: '出库作业',
         title: '出库作业',

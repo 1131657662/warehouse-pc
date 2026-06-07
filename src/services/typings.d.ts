@@ -74,7 +74,35 @@ declare namespace API {
     specification: string;
     total_quantity: number;
     total_damaged: number;
+    total_reserved: number;
     total_ton: number;
+  };
+
+  type RollLifecycleOutbound = {
+    id: number;
+    scan_at: string;
+    revoked: boolean;
+    order_id: number;
+    order_no: string;
+    order_date: string;
+    order_status: string;
+    scan_user_name: string;
+  };
+
+  type RollLifecycle = {
+    inventory: InventoryItem & { created_at?: string };
+    outbound_history: RollLifecycleOutbound[];
+  };
+
+  type ImportReportItem = {
+    id: number;
+    file_name: string;
+    success_count: number;
+    skip_count: number;
+    fail_count: number;
+    status: string;
+    created_by_name: string;
+    created_at: string;
   };
 
   // 客户
@@ -148,6 +176,7 @@ declare namespace API {
     completed_at: string | null;
     scanned_count: number;
     scanned_tons: number;
+    version?: number;
     planned_total?: number;
     planned_ton_total?: number;
     actual_qty_total?: number;

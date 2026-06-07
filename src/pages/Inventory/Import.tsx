@@ -21,11 +21,12 @@ import type { ColumnsType } from 'antd/es/table';
 import { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx';
 import { getCustomerList } from '@/services/customers';
-import { importInventory } from '@/services/inventory';
+import { getImportReports, importInventory } from '@/services/inventory';
 import {
   IMPORT_FIELD_ALIASES,
   pickImportField,
 } from '@/utils/inventoryImportParse';
+import { downloadAuthenticatedFile } from '@/utils/scanLogs';
 
 const { Dragger } = Upload;
 const { Text, Title } = Typography;
@@ -88,7 +89,20 @@ const ImportPage: React.FC = () => {
     failCount: number;
     skipDetails: { row: number; roll_number: string; reason: string }[];
     failDetails: { row: number; reason: string }[];
+    reportId?: number | null;
   } | null>(null);
+
+  const [recentReports, setRecentReports] = useState<API.ImportReportItem[]>([]);
+
+  const loadRecentReports = () => {
+    getImportReports({ current: 1, pageSize: 10 }).then((res) => {
+      if (res.success) setRecentReports(res.data?.list || []);
+    });
+  };
+
+  useEffect(() => {
+    loadRecentReports();
+  }, []);
 
   // 统计
   const okCount = rows.filter((r) => r.status === 'ok').length;
@@ -258,12 +272,20 @@ const ImportPage: React.FC = () => {
       let skipCount = 0;
       const allErrors: { row?: number; roll_number?: string; message?: string }[] = [];
       const totalChunks = Math.ceil(payload.length / IMPORT_CHUNK_SIZE);
+      const batchKey = `import-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      let reportId: number | null = null;
 
       for (let i = 0; i < payload.length; i += IMPORT_CHUNK_SIZE) {
         const chunkIndex = Math.floor(i / IMPORT_CHUNK_SIZE) + 1;
         setImportProgress(`正在导入第 ${chunkIndex}/${totalChunks} 批…`);
         const chunk = payload.slice(i, i + IMPORT_CHUNK_SIZE);
-        const res = await importInventory(chunk, { skipErrorHandler: true, timeout: 180000 });
+        const res = await importInventory(chunk, {
+          skipErrorHandler: true,
+          timeout: 180000,
+          batchKey,
+          fileName: file?.name || '',
+          batchFinal: chunkIndex === totalChunks,
+        });
 
         if (!res.success || !res.data) {
           const errMsg = res.errorMessage || `第 ${chunkIndex} 批导入失败`;
@@ -274,6 +296,7 @@ const ImportPage: React.FC = () => {
         successCount += res.data.successCount;
         skipCount += res.data.skipCount;
         allErrors.push(...(res.data.errors || []));
+        if (res.data.reportId) reportId = res.data.reportId;
       }
 
       const skipDetails = allErrors
@@ -294,8 +317,10 @@ const ImportPage: React.FC = () => {
         failCount: allErrors.length - skipCount,
         skipDetails,
         failDetails,
+        reportId,
       });
       setResultOpen(true);
+      loadRecentReports();
       msg.success(`导入完成：成功 ${successCount} 条`);
     } catch (err: unknown) {
       const apiMsg =
@@ -309,7 +334,23 @@ const ImportPage: React.FC = () => {
     }
   };
 
-  // 下载失败明细
+  const handleDownloadReport = async (reportId?: number | null) => {
+    const id = reportId ?? resultData?.reportId;
+    if (!id) {
+      handleDownloadErrors();
+      return;
+    }
+    try {
+      await downloadAuthenticatedFile(
+        `/api/inventory/import-reports/${id}/download`,
+        `导入报告_${id}.xlsx`,
+      );
+    } catch (e) {
+      msg.error(e instanceof Error ? e.message : '下载失败');
+    }
+  };
+
+  // 下载失败明细（本地兜底）
   const handleDownloadErrors = () => {
     if (!resultData) return;
     const errorRows = [
@@ -444,9 +485,9 @@ const ImportPage: React.FC = () => {
         open={resultOpen}
         onCancel={() => setResultOpen(false)}
         footer={[
-          resultData && (resultData.skipCount + resultData.failCount > 0) && (
-            <Button key="download" icon={<DownloadOutlined />} onClick={handleDownloadErrors}>
-              下载失败明细 Excel
+          resultData && (
+            <Button key="download" icon={<DownloadOutlined />} onClick={() => handleDownloadReport()}>
+              {resultData.reportId ? '下载完整报告' : '下载失败明细 Excel'}
             </Button>
           ),
           <Button key="close" type="primary" onClick={() => setResultOpen(false)}>
@@ -497,6 +538,36 @@ const ImportPage: React.FC = () => {
           </Space>
         )}
       </Modal>
+
+      {recentReports.length > 0 && (
+        <div style={{ marginTop: 32 }}>
+          <Title level={5}>最近导入报告</Title>
+          <Table
+            rowKey="id"
+            size="small"
+            pagination={false}
+            dataSource={recentReports}
+            columns={[
+              { title: 'ID', dataIndex: 'id', width: 60 },
+              { title: '文件', dataIndex: 'file_name', ellipsis: true },
+              { title: '成功', dataIndex: 'success_count', width: 70 },
+              { title: '跳过', dataIndex: 'skip_count', width: 70 },
+              { title: '失败', dataIndex: 'fail_count', width: 70 },
+              { title: '操作人', dataIndex: 'created_by_name', width: 90 },
+              { title: '时间', dataIndex: 'created_at', width: 160 },
+              {
+                title: '操作',
+                width: 90,
+                render: (_, r) => (
+                  <Button type="link" size="small" onClick={() => handleDownloadReport(r.id)}>
+                    下载
+                  </Button>
+                ),
+              },
+            ]}
+          />
+        </div>
+      )}
     </AppPageContainer>
   );
 };

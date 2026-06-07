@@ -95,6 +95,30 @@ export async function submitOrder(id: number, body?: { _version?: number }) {
   );
 }
 
+/** 临时单转正 PUT /api/orders/:id/convert-temp */
+export async function convertTempOrder(
+  id: number,
+  body: {
+    order_date?: string;
+    vehicle_no?: string;
+    container_no?: string;
+    remark?: string;
+    items: {
+      product_name: string;
+      weight: number | null;
+      specification: string;
+      planned_qty: number;
+      estimated_ton?: number;
+      remark?: string;
+    }[];
+  },
+) {
+  return request<{ success: boolean; errorMessage?: string }>(
+    `/api/orders/${id}/convert-temp`,
+    { method: 'POST', data: body },
+  );
+}
+
 /** 可出库卷号 GET /api/orders/:id/available-rolls */
 export async function getAvailableRolls(
   id: number,

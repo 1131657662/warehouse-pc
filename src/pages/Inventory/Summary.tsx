@@ -1,20 +1,25 @@
 import type { ProColumns } from '@ant-design/pro-components';
 import { ProTable } from '@ant-design/pro-components';
-import { Drawer, Table } from 'antd';
+import { App, Button, Drawer, Table, Tag } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
+import RollLifecycleDrawer from '@/components/Inventory/RollLifecycleDrawer';
 import { getCustomerList } from '@/services/customers';
-import { getInventoryList, getInventorySummary } from '@/services/inventory';
+import { getInventoryList, getInventorySummary, refreshModelSummary } from '@/services/inventory';
 import AppPageContainer from '@/components/AppPageContainer';
 import { formatModelLabel } from '@/components/Order/orderConstants';
 import { MODEL_SEARCH_PLACEHOLDER } from '@/constants/modelSearch';
 import { useProTableResize } from '@/utils/proTableConfig';
 
 const InventorySummaryPage: React.FC = () => {
+  const { message, modal } = App.useApp();
   const [customers, setCustomers] = useState<API.CustomerItem[]>([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [rolls, setRolls] = useState<API.InventoryItem[]>([]);
   const [rollsLoading, setRollsLoading] = useState(false);
   const [activeRow, setActiveRow] = useState<API.InventorySummary | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lifecycleOpen, setLifecycleOpen] = useState(false);
+  const [lifecycleRoll, setLifecycleRoll] = useState<{ id?: number; rollNumber?: string }>({});
 
   useEffect(() => {
     getCustomerList().then((res) => {
@@ -46,6 +51,31 @@ const InventorySummaryPage: React.FC = () => {
     }
   };
 
+  const openLifecycle = (item: API.InventoryItem) => {
+    setLifecycleRoll({ id: item.id, rollNumber: item.roll_number });
+    setLifecycleOpen(true);
+  };
+
+  const handleRefreshSummary = () => {
+    modal.confirm({
+      title: '重建型号汇总？',
+      content: '将从库存明细重算全部客户的型号汇总表，大批量导入后若选型号数据异常可执行此操作。',
+      onOk: async () => {
+        setRefreshing(true);
+        try {
+          const res = await refreshModelSummary();
+          if (res.success) {
+            message.success(res.errorMessage || '重建完成');
+          } else {
+            message.error(res.errorMessage || '重建失败');
+          }
+        } finally {
+          setRefreshing(false);
+        }
+      },
+    });
+  };
+
   const baseColumns: ProColumns<API.InventorySummary>[] = useMemo(() => [
     {
       title: '客户',
@@ -69,6 +99,16 @@ const InventorySummaryPage: React.FC = () => {
     { title: '克重', dataIndex: 'weight', width: 80, align: 'center', hideInSearch: true },
     { title: '规格', dataIndex: 'specification', width: 120, hideInSearch: true },
     { title: '件数', dataIndex: 'total_quantity', width: 90, align: 'center', hideInSearch: true },
+    {
+      title: '在途占用',
+      dataIndex: 'total_reserved',
+      width: 90,
+      align: 'center',
+      hideInSearch: true,
+      render: (_, r) => (
+        r.total_reserved > 0 ? <Tag color="orange">{r.total_reserved}</Tag> : '0'
+      ),
+    },
     { title: '吨位', dataIndex: 'total_ton', width: 90, align: 'center', hideInSearch: true,
       render: (_: any, r: API.InventorySummary) => (r.total_ton != null ? Number(r.total_ton).toFixed(3) : '-'), },
     {
@@ -84,7 +124,7 @@ const InventorySummaryPage: React.FC = () => {
   ], [customers]);
 
   const { columns, components, tableProps } = useProTableResize(
-    'inventory-summary-v1',
+    'inventory-summary-v2',
     baseColumns,
   );
 
@@ -95,6 +135,11 @@ const InventorySummaryPage: React.FC = () => {
         components={components}
         columns={columns}
         headerTitle="库存型号汇总"
+        toolBarRender={() => [
+          <Button key="refresh" loading={refreshing} onClick={handleRefreshSummary}>
+            重建型号汇总
+          </Button>,
+        ]}
         rowKey={(r) => `${r.customer_id}|${r.product_name}|${r.weight}|${r.specification}`}
         request={async (params) => {
           const res = await getInventorySummary({
@@ -118,7 +163,7 @@ const InventorySummaryPage: React.FC = () => {
               )
             : '卷号明细'
         }
-        width={560}
+        width={640}
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
       >
@@ -130,13 +175,35 @@ const InventorySummaryPage: React.FC = () => {
           pagination={false}
           className="wh-outbound-log-table"
           columns={[
-            { title: '卷号', dataIndex: 'roll_number' },
+            {
+              title: '卷号',
+              dataIndex: 'roll_number',
+              render: (v: string, r) => <a onClick={() => openLifecycle(r)}>{v}</a>,
+            },
             { title: '件重(kg)', dataIndex: 'piece_weight', width: 100,
               render: (v: number | null) => v != null ? Number(v).toFixed(1) : '-', },
             { title: '破损', dataIndex: 'damaged', width: 80 },
+            {
+              title: '状态',
+              dataIndex: 'reserve_status',
+              width: 90,
+              render: (s: string) =>
+                s === 'reserved' ? <Tag color="orange">在途</Tag> : <Tag color="green">可用</Tag>,
+            },
+            {
+              title: '操作',
+              width: 80,
+              render: (_, r) => <a onClick={() => openLifecycle(r)}>生命周期</a>,
+            },
           ]}
         />
       </Drawer>
+      <RollLifecycleDrawer
+        open={lifecycleOpen}
+        inventoryId={lifecycleRoll.id}
+        rollNumber={lifecycleRoll.rollNumber}
+        onClose={() => setLifecycleOpen(false)}
+      />
     </AppPageContainer>
   );
 };

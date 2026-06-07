@@ -1,4 +1,5 @@
 import {
+  CopyOutlined,
   DownloadOutlined,
   DownOutlined,
   PrinterOutlined,
@@ -6,12 +7,14 @@ import {
   RollbackOutlined,
   ScanOutlined,
   StopOutlined,
+  SwapOutlined,
 } from '@ant-design/icons';
 import { ProCard } from '@ant-design/pro-components';
 import AppPageContainer from '@/components/AppPageContainer';
 import { history, useAccess, useParams } from '@umijs/max';
 import {
   App,
+  Alert,
   Button,
   Collapse,
   Descriptions,
@@ -213,7 +216,20 @@ const OrdersDetail: React.FC = () => {
     }
   };
 
+  const canConvertTemp =
+    access.canPcOutbound &&
+    order?.temp &&
+    (order.status === 'pending' || order.status === 'scanning');
+
   const moreMenuItems: MenuProps['items'] = [
+    canConvertTemp
+      ? {
+          key: 'convert-temp',
+          icon: <SwapOutlined />,
+          label: '临时单转正',
+          onClick: () => history.push(`/orders/${orderId}/convert-temp`),
+        }
+      : null,
     canOperate
       ? {
           key: 'outbound',
@@ -241,6 +257,14 @@ const OrdersDetail: React.FC = () => {
               onOk: handleSubmit,
             });
           },
+        }
+      : null,
+    order?.status === 'completed' && access.canPcOutbound
+      ? {
+          key: 'copy',
+          icon: <CopyOutlined />,
+          label: '复制建单',
+          onClick: () => history.push(`/orders/create?copyFromId=${orderId}`),
         }
       : null,
     order?.status === 'completed' && access.canPcOutbound
@@ -310,6 +334,15 @@ const OrdersDetail: React.FC = () => {
           <Button icon={<DownloadOutlined />} loading={exporting} onClick={handleDownload}>
             下载明细
           </Button>
+          {canConvertTemp ? (
+            <Button
+              type="primary"
+              icon={<SwapOutlined />}
+              onClick={() => history.push(`/orders/${orderId}/convert-temp`)}
+            >
+              临时单转正
+            </Button>
+          ) : null}
           <Button
             icon={<PrinterOutlined />}
             onClick={async () => {
@@ -330,6 +363,24 @@ const OrdersDetail: React.FC = () => {
     >
       {order ? (
         <>
+          {canConvertTemp ? (
+            <Alert
+              type="warning"
+              showIcon
+              style={{ marginBottom: 16 }}
+              message="临时出库单"
+              description="现场扫码后请补全计划明细并转为正式订单，便于后续管理与对账。"
+              action={
+                <Button
+                  type="primary"
+                  size="small"
+                  onClick={() => history.push(`/orders/${orderId}/convert-temp`)}
+                >
+                  去转正
+                </Button>
+              }
+            />
+          ) : null}
           <ProCard bordered style={{ marginBottom: 16 }}>
             <Descriptions column={{ xs: 1, sm: 2, md: 3 }} size="small">
               <Descriptions.Item label="订单号">{order.order_no}</Descriptions.Item>

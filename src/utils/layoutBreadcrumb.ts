@@ -17,6 +17,8 @@ export function resolveLayoutBackTarget(pathname: string): string | null {
   }
   const outbound = pathname.match(/^\/orders\/(\d+)\/outbound$/);
   if (outbound) return `/orders/${outbound[1]}/detail`;
+  const convertTemp = pathname.match(/^\/orders\/(\d+)\/convert-temp$/);
+  if (convertTemp) return `/orders/${convertTemp[1]}/detail`;
   const print = pathname.match(/^\/orders\/(\d+)\/print$/);
   if (print) return `/orders/${print[1]}/detail`;
   const detail = pathname.match(/^\/orders\/(\d+)\/detail$/);
@@ -44,6 +46,10 @@ export function patchBreadcrumbItems(
   if (pathname === '/orders/create' && search.includes('editId=')) {
     const last = next[next.length - 1];
     if (last) last.title = '编辑订单';
+  }
+  if (pathname === '/orders/create' && search.includes('copyFromId=')) {
+    const last = next[next.length - 1];
+    if (last) last.title = '复制建单';
   }
   return next;
 }

@@ -19,6 +19,7 @@ import AddModelModal, {
 } from '@/components/Order/AddModelModal';
 import { formatModelLabel } from '@/components/Order/orderConstants';
 import { getCustomerList } from '@/services/customers';
+import { getInventoryModelSummary } from '@/services/inventory';
 import { createOrder, getOrderDetail, updateOrder } from '@/services/orders';
 
 const { Text } = Typography;
@@ -35,14 +36,55 @@ interface DetailRow {
   remark: string;
 }
 
+function buildDetailRowsFromItems(items: API.OrderDetailItem[]): DetailRow[] {
+  const modelMap = new Map<
+    string,
+    { planned_qty: number; remark: string; stock_qty: number; stock_ton: number; estimated_ton: number }
+  >();
+  for (const item of items) {
+    const key = `${item.product_name}|${item.weight}|${item.specification}`;
+    const lineTon = Number(item.estimated_ton || 0);
+    if (modelMap.has(key)) {
+      const row = modelMap.get(key)!;
+      row.planned_qty += item.planned_qty;
+      row.estimated_ton += lineTon;
+    } else {
+      modelMap.set(key, {
+        planned_qty: item.planned_qty,
+        remark: item.remark,
+        stock_qty: item.planned_qty ?? 0,
+        stock_ton: lineTon,
+        estimated_ton: lineTon,
+      });
+    }
+  }
+  return Array.from(modelMap.entries()).map(([key, m]) => {
+    const [product_name, weightStr, specification] = key.split('|');
+    const weight = parseFloat(weightStr);
+    return {
+      key: `${Date.now()}_${Math.random()}`,
+      product_name,
+      weight: Number.isNaN(weight) ? null : weight,
+      specification,
+      stock_qty: m.stock_qty,
+      stock_ton: m.stock_ton,
+      planned_qty: m.planned_qty,
+      estimated_ton: m.estimated_ton,
+      remark: m.remark,
+    };
+  });
+}
+
 const CreateOrderPage: React.FC = () => {
   const { message } = App.useApp();
   const [form] = ProForm.useForm();
   const [searchParams] = useSearchParams();
   const editId = searchParams.get('editId');
+  const copyFromId = searchParams.get('copyFromId');
   const isEdit = !!editId;
+  const isCopy = !!copyFromId;
 
-  const [loadingData, setLoadingData] = useState(!!isEdit);
+  const [loadingData, setLoadingData] = useState(!!isEdit || !!isCopy);
   const [customers, setCustomers] = useState<API.CustomerItem[]>([]);
   const [details, setDetails] = useState<DetailRow[]>([]);
   const [modelOpen, setModelOpen] = useState(false);
@@ -55,8 +97,8 @@ const CreateOrderPage: React.FC = () => {
   const totalTon = details.reduce((sum, d) => sum + d.estimated_ton, 0);
 
   useEffect(() => {
-    document.title = `${isEdit ? '编辑订单' : '创建订单'} - 茂智物流`;
-  }, [isEdit]);
+    document.title = `${isEdit ? '编辑订单' : isCopy ? '复制建单' : '创建订单'} - 茂智物流`;
+  }, [isEdit, isCopy]);
 
   useEffect(() => {
     getCustomerList({ pageSize: 500 }).then((res) => {
@@ -87,43 +129,72 @@ const CreateOrderPage: React.FC = () => {
           container_no: order.container_no,
           remark: order.remark,
         });
-        const modelMap = new Map<
-          string,
-          { planned_qty: number; remark: string; stock_qty: number; stock_ton: number }
-        >();
-        for (const item of order.items) {
-          const key = `${item.product_name}|${item.weight}|${item.specification}`;
-          if (modelMap.has(key)) {
-            modelMap.get(key)!.planned_qty += item.planned_qty;
-          } else {
-            modelMap.set(key, {
-              planned_qty: item.planned_qty,
-              remark: item.remark,
-              stock_qty: item.stock_qty ?? item.planned_qty ?? 0,
-              stock_ton: item.stock_ton ?? 0,
-            });
-          }
-        }
-        setDetails(
-          Array.from(modelMap.entries()).map(([key, m]) => {
-            const [product_name, weightStr, specification] = key.split('|');
-            const weight = parseFloat(weightStr);
-            return {
-              key: `${Date.now()}_${Math.random()}`,
-              product_name,
-              weight: Number.isNaN(weight) ? null : weight,
-              specification,
-              stock_qty: m.stock_qty,
-              stock_ton: m.stock_ton,
-              planned_qty: m.planned_qty,
-              estimated_ton: m.stock_qty > 0 ? Number(((m.stock_ton / m.stock_qty) * m.planned_qty).toFixed(3)) : 0,
-              remark: m.remark,
-            };
-          }),
-        );
+        setDetails(buildDetailRowsFromItems(order.items || []));
       })
       .finally(() => setLoadingData(false));
   }, [editId, form, message]);
+
+  useEffect(() => {
+    if (!copyFromId) return;
+    setLoadingData(true);
+    getOrderDetail(Number(copyFromId))
+      .then(async (res) => {
+        if (!res.success || !res.data) {
+          message.error('加载源订单失败');
+          history.replace('/orders');
+          return;
+        }
+        const order = res.data;
+        if (order.status !== 'completed') {
+          message.warning('仅已完成订单可复制建单');
+          history.replace(`/orders/${copyFromId}/detail`);
+          return;
+        }
+        form.setFieldsValue({
+          customer_id: order.customer_id,
+          order_date: dayjs(),
+          vehicle_no: order.vehicle_no,
+          container_no: order.container_no,
+          remark: order.remark,
+        });
+        const plannedItems = (order.items || []).filter((it) => !it.is_unplanned);
+        let rows = buildDetailRowsFromItems(plannedItems);
+        try {
+          const stockRes = await getInventoryModelSummary(order.customer_id);
+          if (stockRes.success && stockRes.data) {
+            const stockMap = new Map(
+              stockRes.data.map((s) => [
+                modelKey({
+                  product_name: s.product_name,
+                  weight: s.weight,
+                  specification: s.specification,
+                }),
+                s,
+              ]),
+            );
+            rows = rows.map((r) => {
+              const stock = stockMap.get(modelKey(r));
+              if (!stock) return r;
+              const stockQty = Number(stock.stock_qty || 0);
+              const stockTon = Number(stock.stock_ton || 0);
+              return {
+                ...r,
+                stock_qty: stockQty,
+                stock_ton: stockTon,
+                estimated_ton: stockQty > 0
+                  ? Number(((stockTon / stockQty) * r.planned_qty).toFixed(3))
+                  : r.estimated_ton,
+              };
+            });
+          }
+        } catch {
+          /* ignore */
+        }
+        setDetails(rows);
+        message.success(`已从 ${order.order_no} 复制明细，请核对库存与件数后创建`);
+      })
+      .finally(() => setLoadingData(false));
+  }, [copyFromId, form, message]);
 
   const existingModelKeys = useMemo(
     () => new Set(details.map((d) => modelKey(d))),
@@ -327,7 +398,7 @@ const CreateOrderPage: React.FC = () => {
 
   return (
     <AppPageContainer
-      title={isEdit ? '编辑订单' : '创建订单'}
+      title={isEdit ? '编辑订单' : isCopy ? '复制建单' : '创建订单'}
       onBack={() => history.push('/orders')}
       footer={[
         <Button

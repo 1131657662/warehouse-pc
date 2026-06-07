@@ -1,6 +1,7 @@
 import type { ProColumns } from '@ant-design/pro-components';
 import { ProTable } from '@ant-design/pro-components';
 import AppPageContainer from '@/components/AppPageContainer';
+import RollLifecycleDrawer from '@/components/Inventory/RollLifecycleDrawer';
 import { history } from '@umijs/max';
 import { Tag, Typography } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
@@ -15,6 +16,8 @@ const { Text, Link } = Typography;
 
 const OutboundTracePage: React.FC = () => {
   const [customers, setCustomers] = useState<API.CustomerItem[]>([]);
+  const [lifecycleOpen, setLifecycleOpen] = useState(false);
+  const [lifecycleRoll, setLifecycleRoll] = useState<{ id?: number; rollNumber?: string }>({});
 
   useEffect(() => {
     getCustomerList().then((res) => {
@@ -30,6 +33,16 @@ const OutboundTracePage: React.FC = () => {
         width: 140,
         copyable: true,
         fieldProps: { placeholder: '卷号' },
+        render: (_, r) => (
+          <Link
+            onClick={() => {
+              setLifecycleRoll({ id: r.inventory_id, rollNumber: r.roll_number });
+              setLifecycleOpen(true);
+            }}
+          >
+            {r.roll_number}
+          </Link>
+        ),
       },
       {
         title: '客户',
@@ -214,6 +227,12 @@ const OutboundTracePage: React.FC = () => {
             success: res.success,
           };
         }}
+      />
+      <RollLifecycleDrawer
+        open={lifecycleOpen}
+        inventoryId={lifecycleRoll.id}
+        rollNumber={lifecycleRoll.rollNumber}
+        onClose={() => setLifecycleOpen(false)}
       />
     </AppPageContainer>
   );

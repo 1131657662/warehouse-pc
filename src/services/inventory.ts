@@ -62,7 +62,7 @@ export async function batchDeleteInventory(body: {
   }>('/api/inventory/batch-delete', { method: 'POST', data: body });
 }
 
-/** 批量导入 POST /api/inventory/import — 发送客户端解析后的 rows JSON */
+/** 批量导入 POST /api/inventory/import */
 export async function importInventory(
   rows: {
     row?: number;
@@ -77,7 +77,13 @@ export async function importInventory(
     damaged: string;
     remark: string;
   }[],
-  options?: { skipErrorHandler?: boolean; timeout?: number },
+  options?: {
+    skipErrorHandler?: boolean;
+    timeout?: number;
+    batchKey?: string;
+    fileName?: string;
+    batchFinal?: boolean;
+  },
 ) {
   return request<{
     success: boolean;
@@ -86,14 +92,45 @@ export async function importInventory(
       successCount: number;
       skipCount: number;
       errorCount: number;
+      failCount?: number;
+      reportId?: number | null;
       errors: { row: number; roll_number?: string; message?: string }[];
     };
   }>('/api/inventory/import', {
     method: 'POST',
-    data: { rows },
+    data: {
+      rows,
+      batchKey: options?.batchKey,
+      fileName: options?.fileName,
+      batchFinal: options?.batchFinal,
+    },
     skipErrorHandler: options?.skipErrorHandler,
     timeout: options?.timeout ?? 120000,
   });
+}
+
+/** 导入报告列表 GET /api/inventory/import-reports */
+export async function getImportReports(params?: { current?: number; pageSize?: number }) {
+  return request<{
+    success: boolean;
+    data: { list: API.ImportReportItem[]; total: number };
+  }>('/api/inventory/import-reports', { method: 'GET', params });
+}
+
+/** 重建型号汇总 POST /api/inventory/refresh-model-summary */
+export async function refreshModelSummary(body?: { customer_id?: number }) {
+  return request<{ success: boolean; errorMessage?: string }>(
+    '/api/inventory/refresh-model-summary',
+    { method: 'POST', data: body || {} },
+  );
+}
+
+/** 卷号生命周期 GET /api/inventory/lifecycle */
+export async function getInventoryLifecycle(params: { id?: number; roll_number?: string }) {
+  return request<{ success: boolean; data: API.RollLifecycle }>(
+    '/api/inventory/lifecycle',
+    { method: 'GET', params },
+  );
 }
 
 /** 库存汇总 GET /api/inventory/summary */

@@ -27,6 +27,7 @@ import {
   updateInventory,
 } from '@/services/inventory';
 import AppPageContainer from '@/components/AppPageContainer';
+import RollLifecycleDrawer from '@/components/Inventory/RollLifecycleDrawer';
 import { MODEL_SEARCH_PLACEHOLDER } from '@/constants/modelSearch';
 import { buildInventoryExportQuery, downloadAuthenticatedFile } from '@/utils/scanLogs';
 import { useProTableResize } from '@/utils/proTableConfig';
@@ -80,6 +81,9 @@ const InventoryList: React.FC = () => {
     weights: number[];
     specs: string[];
   }>({ productNames: [], weights: [], specs: [] });
+
+  const [lifecycleOpen, setLifecycleOpen] = useState(false);
+  const [lifecycleRoll, setLifecycleRoll] = useState<{ id?: number; rollNumber?: string }>({});
 
   // 加载四维度联动选项
   const loadSummaryOptions = async (customerId?: number, productName?: string, weight?: number) => {
@@ -263,6 +267,16 @@ const InventoryList: React.FC = () => {
       width: 128,
       sorter: true,
       hideInSearch: true,
+      render: (_, r) => (
+        <a
+          onClick={() => {
+            setLifecycleRoll({ id: r.id, rollNumber: r.roll_number });
+            setLifecycleOpen(true);
+          }}
+        >
+          {r.roll_number}
+        </a>
+      ),
     },
     {
       title: '件重(kg)',
@@ -589,6 +603,12 @@ const InventoryList: React.FC = () => {
           )}
         </Space>
       </Modal>
+      <RollLifecycleDrawer
+        open={lifecycleOpen}
+        inventoryId={lifecycleRoll.id}
+        rollNumber={lifecycleRoll.rollNumber}
+        onClose={() => setLifecycleOpen(false)}
+      />
     </AppPageContainer>
   );
 };
