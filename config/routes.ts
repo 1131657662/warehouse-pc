@@ -131,11 +131,25 @@ export default [
     access: 'isAdmin',
   },
   {
+    path: '/system/maintenance',
+    name: '数据修复',
+    title: '数据修复',
+    icon: 'ToolOutlined',
+    component: './System/Maintenance',
+    access: 'isAdmin',
+  },
+  {
     path: '/account/password',
     name: '修改密码',
     title: '修改密码',
     component: './Account/Password',
     hideInMenu: true,
   },
-  { path: '/login', name: '登录', title: '登录', component: './Login', layout: false },
+  {
+    path: '/login',
+    name: '登录',
+    title: '登录',
+    component: './Login',
+    layout: false,
+  },
 ];
