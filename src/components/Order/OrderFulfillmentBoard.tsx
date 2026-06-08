@@ -60,7 +60,7 @@ function MetricCell({
 const OrderFulfillmentBoard: React.FC<Props> = ({ order }) => {
   const summary = (order.summary || []) as SummaryRow[];
   const plannedQty = summary.reduce(
-    (s, r) => s + (r.is_unplanned ? 0 : (r.planned_qty || 0)),
+    (s, r) => s + (r.is_unplanned ? 0 : r.planned_qty || 0),
     0,
   );
   const plannedTon = summary.reduce(
@@ -96,6 +96,16 @@ const OrderFulfillmentBoard: React.FC<Props> = ({ order }) => {
             {r.specification || '—'}
           </Text>
         </div>
+      ),
+    },
+    {
+      title: '编号',
+      width: 120,
+      ellipsis: true,
+      render: (_, r) => (
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          {r.scanned_codes || r.stock_codes || r.codes || '—'}
+        </Text>
       ),
     },
     {
@@ -157,9 +167,7 @@ const OrderFulfillmentBoard: React.FC<Props> = ({ order }) => {
       render: (_, r) => {
         if (order.temp || r.is_unplanned) return '—';
         const remain = Math.max(0, (r.planned_qty || 0) - (r.actual_qty || 0));
-        return (
-          <Text type={remain > 0 ? 'warning' : 'success'}>{remain}</Text>
-        );
+        return <Text type={remain > 0 ? 'warning' : 'success'}>{remain}</Text>;
       },
     },
     {
@@ -252,11 +260,7 @@ const OrderFulfillmentBoard: React.FC<Props> = ({ order }) => {
         )}
       </ProCard>
 
-      <ProCard
-        title="按型号对比"
-        bordered
-        style={{ marginBottom: 16 }}
-      >
+      <ProCard title="按型号对比" bordered style={{ marginBottom: 16 }}>
         <Table
           rowKey={(r) =>
             `${r.product_name}|${r.weight}|${r.specification}|${r.is_unplanned ? 'U' : 'P'}`
@@ -267,7 +271,9 @@ const OrderFulfillmentBoard: React.FC<Props> = ({ order }) => {
           size="middle"
           className="wh-outbound-log-table"
           locale={{
-            emptyText: order.temp ? '临时单无计划型号，出库后自动汇总' : '暂无计划明细',
+            emptyText: order.temp
+              ? '临时单无计划型号，出库后自动汇总'
+              : '暂无计划明细',
           }}
         />
       </ProCard>

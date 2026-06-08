@@ -5,7 +5,11 @@ import {
   ImportOutlined,
   PlusOutlined,
 } from '@ant-design/icons';
-import type { ActionType, ProColumns, ProFormInstance } from '@ant-design/pro-components';
+import type {
+  ActionType,
+  ProColumns,
+  ProFormInstance,
+} from '@ant-design/pro-components';
 import {
   ModalForm,
   ProFormDigit,
@@ -15,8 +19,20 @@ import {
   ProTable,
 } from '@ant-design/pro-components';
 import { history, useAccess } from '@umijs/max';
-import { App, Button, Modal, Popconfirm, Select, Space, Tag, Typography } from 'antd';
+import {
+  App,
+  Button,
+  Modal,
+  Popconfirm,
+  Select,
+  Space,
+  Tag,
+  Typography,
+} from 'antd';
 import { useEffect, useRef, useState } from 'react';
+import AppPageContainer from '@/components/AppPageContainer';
+import RollLifecycleDrawer from '@/components/Inventory/RollLifecycleDrawer';
+import { MODEL_SEARCH_PLACEHOLDER } from '@/constants/modelSearch';
 import { getCustomerList } from '@/services/customers';
 import {
   batchDeleteInventory,
@@ -26,11 +42,11 @@ import {
   getInventorySummary,
   updateInventory,
 } from '@/services/inventory';
-import AppPageContainer from '@/components/AppPageContainer';
-import RollLifecycleDrawer from '@/components/Inventory/RollLifecycleDrawer';
-import { MODEL_SEARCH_PLACEHOLDER } from '@/constants/modelSearch';
-import { buildInventoryExportQuery, downloadAuthenticatedFile } from '@/utils/scanLogs';
 import { useProTableResize } from '@/utils/proTableConfig';
+import {
+  buildInventoryExportQuery,
+  downloadAuthenticatedFile,
+} from '@/utils/scanLogs';
 
 type InventoryItem = API.InventoryItem;
 
@@ -47,27 +63,38 @@ const InventoryList: React.FC = () => {
     try {
       const res = await getCustomerList();
       if (res.success) setCustomers(res.data?.list || []);
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   };
-  useEffect(() => { loadCustomers(); }, []);
+  useEffect(() => {
+    loadCustomers();
+  }, []);
 
   // === 品名搜索栏选项（联动客户） ===
-  const [productNameOptions, setProductNameOptions] = useState<{ label: string; value: string }[]>([]);
+  const [productNameOptions, setProductNameOptions] = useState<
+    { label: string; value: string }[]
+  >([]);
   const loadProductNameOptions = async (customerId?: number) => {
-    if (!customerId) { setProductNameOptions([]); return; }
+    if (!customerId) {
+      setProductNameOptions([]);
+      return;
+    }
     try {
       const res = await getInventorySummary({ customer_id: customerId });
       if (res.success && res.data) {
         const names = [...new Set(res.data.map((i) => i.product_name))];
         setProductNameOptions(names.map((n) => ({ label: n, value: n })));
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   };
 
   // === 新增/编辑弹窗 ===
   const [editOpen, setEditOpen] = useState(false);
   const [editRecord, setEditRecord] = useState<InventoryItem | null>(null);
-  const [formCustomerId, setFormCustomerId] = useState<number | undefined>();
+  const [_formCustomerId, setFormCustomerId] = useState<number | undefined>();
 
   // === 批量删除弹窗 ===
   const [batchDelOpen, setBatchDelOpen] = useState(false);
@@ -83,11 +110,21 @@ const InventoryList: React.FC = () => {
   }>({ productNames: [], weights: [], specs: [] });
 
   const [lifecycleOpen, setLifecycleOpen] = useState(false);
-  const [lifecycleRoll, setLifecycleRoll] = useState<{ id?: number; rollNumber?: string }>({});
+  const [lifecycleRoll, setLifecycleRoll] = useState<{
+    id?: number;
+    rollNumber?: string;
+  }>({});
 
   // 加载四维度联动选项
-  const loadSummaryOptions = async (customerId?: number, productName?: string, weight?: number) => {
-    if (!customerId) { setSummaryOptions({ productNames: [], weights: [], specs: [] }); return; }
+  const loadSummaryOptions = async (
+    customerId?: number,
+    productName?: string,
+    weight?: number,
+  ) => {
+    if (!customerId) {
+      setSummaryOptions({ productNames: [], weights: [], specs: [] });
+      return;
+    }
     try {
       const res = await getInventorySummary({ customer_id: customerId });
       if (!res.success) return;
@@ -118,36 +155,53 @@ const InventoryList: React.FC = () => {
         weights: [...new Set(filtered.map((i) => i.weight))],
         specs: [...new Set(filtered2.map((i) => i.specification))],
       });
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   };
 
   // 计算批量删除影响数量
   const calcDeleteCount = async () => {
     // 使用 summary 数据粗略计算，后端 batch-delete 时再做精确匹配
-    if (!delCustomerId) { setDelCount(0); return; }
+    if (!delCustomerId) {
+      setDelCount(0);
+      return;
+    }
     try {
       const res = await getInventorySummary({ customer_id: delCustomerId });
       if (!res.success) return;
       let list = res.data || [];
-      if (delProductName) list = list.filter((i) => i.product_name === delProductName);
+      if (delProductName)
+        list = list.filter((i) => i.product_name === delProductName);
       if (delWeight) list = list.filter((i) => i.weight === delWeight);
       if (delSpec) list = list.filter((i) => i.specification === delSpec);
       setDelCount(list.reduce((sum, i) => sum + i.total_quantity, 0));
-    } catch { setDelCount(0); }
+    } catch {
+      setDelCount(0);
+    }
   };
 
-  useEffect(() => { loadSummaryOptions(delCustomerId, delProductName, delWeight); calcDeleteCount(); }, [delCustomerId, delProductName, delWeight, delSpec]);
+  useEffect(() => {
+    loadSummaryOptions(delCustomerId, delProductName, delWeight);
+    calcDeleteCount();
+  }, [delCustomerId, delProductName, delWeight, delSpec]);
 
   // 处理新增/编辑提交
   const handleEditSubmit = async (values: any) => {
     if (editRecord) {
       const res = await updateInventory(editRecord.id, values);
-      if (res.success) { message.success('编辑成功'); setEditOpen(false); actionRef.current?.reload(); }
-      else message.error(res.errorMessage || '编辑失败');
+      if (res.success) {
+        message.success('编辑成功');
+        setEditOpen(false);
+        actionRef.current?.reload();
+      } else message.error(res.errorMessage || '编辑失败');
     } else {
       const res = await createInventory(values);
-      if (res.success) { message.success('新增成功'); setEditOpen(false); actionRef.current?.reload(); }
-      else message.error(res.errorMessage || '新增失败');
+      if (res.success) {
+        message.success('新增成功');
+        setEditOpen(false);
+        actionRef.current?.reload();
+      } else message.error(res.errorMessage || '新增失败');
     }
     return true;
   };
@@ -251,7 +305,7 @@ const InventoryList: React.FC = () => {
       align: 'center',
       sorter: true,
       hideInSearch: true,
-      render: (_, r) => r.weight != null ? r.weight : '-',
+      render: (_, r) => (r.weight != null ? r.weight : '-'),
     },
     {
       title: '规格',
@@ -279,13 +333,21 @@ const InventoryList: React.FC = () => {
       ),
     },
     {
+      title: '编号',
+      dataIndex: 'code',
+      width: 100,
+      ellipsis: true,
+      hideInSearch: true,
+      render: (_, r) => r.code || '-',
+    },
+    {
       title: '件重(kg)',
       dataIndex: 'piece_weight',
       width: 90,
       align: 'center',
       sorter: true,
       hideInSearch: true,
-      render: (_, r) => r.piece_weight != null ? r.piece_weight : '-',
+      render: (_, r) => (r.piece_weight != null ? r.piece_weight : '-'),
     },
     {
       title: '件数',
@@ -364,7 +426,12 @@ const InventoryList: React.FC = () => {
                   }
                 }}
               >
-                <Button type="link" danger size="small" icon={<DeleteOutlined />}>
+                <Button
+                  type="link"
+                  danger
+                  size="small"
+                  icon={<DeleteOutlined />}
+                >
                   删除
                 </Button>
               </Popconfirm>
@@ -392,11 +459,11 @@ const InventoryList: React.FC = () => {
     }
   };
 
-  const { columns: resizableColumns, components, tableProps } = useProTableResize(
-    'inventory-table-v2',
-    columns,
-    { minTableWidth: 1360 },
-  );
+  const {
+    columns: resizableColumns,
+    components,
+    tableProps,
+  } = useProTableResize('inventory-table-v2', columns, { minTableWidth: 1360 });
 
   return (
     <AppPageContainer>
@@ -425,7 +492,10 @@ const InventoryList: React.FC = () => {
           };
         }}
         toolBarRender={() => [
-          <Button key="summary" onClick={() => history.push('/inventory/summary')}>
+          <Button
+            key="summary"
+            onClick={() => history.push('/inventory/summary')}
+          >
             型号汇总
           </Button>,
           canManageInventory ? (
@@ -481,9 +551,7 @@ const InventoryList: React.FC = () => {
         onOpenChange={setEditOpen}
         width={520}
         initialValues={
-          editRecord
-            ? { ...editRecord }
-            : { quantity: 1, damaged: '' }
+          editRecord ? { ...editRecord } : { quantity: 1, damaged: '' }
         }
         onFinish={handleEditSubmit}
         modalProps={{ destroyOnHidden: true }}
@@ -496,7 +564,8 @@ const InventoryList: React.FC = () => {
           options={customers.map((c) => ({ label: c.name, value: c.id }))}
           rules={[{ required: true, message: '请选择客户' }]}
           fieldProps={{
-            onChange: (v: unknown) => setFormCustomerId(v as number | undefined),
+            onChange: (v: unknown) =>
+              setFormCustomerId(v as number | undefined),
           }}
         />
         <ProFormText
@@ -505,7 +574,12 @@ const InventoryList: React.FC = () => {
           placeholder="请输入品名"
           rules={[{ required: true, message: '请输入品名' }]}
         />
-        <ProFormDigit name="weight" label="克重" placeholder="克重(g)" min={0} />
+        <ProFormDigit
+          name="weight"
+          label="克重"
+          placeholder="克重(g)"
+          min={0}
+        />
         <ProFormText name="specification" label="规格" placeholder="规格" />
         <ProFormText
           name="roll_number"
@@ -513,7 +587,17 @@ const InventoryList: React.FC = () => {
           placeholder="请输入卷号（唯一）"
           rules={[{ required: true, message: '请输入卷号' }]}
         />
-        <ProFormDigit name="piece_weight" label="件重(kg)" placeholder="件重(kg)" min={0} />
+        <ProFormText
+          name="code"
+          label="编号"
+          placeholder="编号（可空、可重复）"
+        />
+        <ProFormDigit
+          name="piece_weight"
+          label="件重(kg)"
+          placeholder="件重(kg)"
+          min={0}
+        />
         {!editRecord && (
           <ProFormDigit
             name="quantity"
@@ -524,11 +608,7 @@ const InventoryList: React.FC = () => {
             rules={[{ required: true, message: '请输入件数' }]}
           />
         )}
-        <ProFormText
-          name="damaged"
-          label="破损"
-          placeholder="破损描述"
-        />
+        <ProFormText name="damaged" label="破损" placeholder="破损描述" />
         <ProFormTextArea name="remark" label="备注" placeholder="备注信息" />
       </ModalForm>
 
@@ -550,7 +630,12 @@ const InventoryList: React.FC = () => {
               allowClear
               showSearch
               value={delCustomerId}
-              onChange={(v) => { setDelCustomerId(v); setDelProductName(undefined); setDelWeight(undefined); setDelSpec(undefined); }}
+              onChange={(v) => {
+                setDelCustomerId(v);
+                setDelProductName(undefined);
+                setDelWeight(undefined);
+                setDelSpec(undefined);
+              }}
               options={customers.map((c) => ({ label: c.name, value: c.id }))}
             />
           </div>
@@ -562,8 +647,15 @@ const InventoryList: React.FC = () => {
               allowClear
               disabled={!delCustomerId}
               value={delProductName}
-              onChange={(v) => { setDelProductName(v); setDelWeight(undefined); setDelSpec(undefined); }}
-              options={summaryOptions.productNames.map((n) => ({ label: n, value: n }))}
+              onChange={(v) => {
+                setDelProductName(v);
+                setDelWeight(undefined);
+                setDelSpec(undefined);
+              }}
+              options={summaryOptions.productNames.map((n) => ({
+                label: n,
+                value: n,
+              }))}
             />
           </div>
           <div>
@@ -574,8 +666,14 @@ const InventoryList: React.FC = () => {
               allowClear
               disabled={!delProductName}
               value={delWeight}
-              onChange={(v) => { setDelWeight(v); setDelSpec(undefined); }}
-              options={summaryOptions.weights.map((w) => ({ label: String(w), value: w }))}
+              onChange={(v) => {
+                setDelWeight(v);
+                setDelSpec(undefined);
+              }}
+              options={summaryOptions.weights.map((w) => ({
+                label: String(w),
+                value: w,
+              }))}
             />
           </div>
           <div>
@@ -587,13 +685,19 @@ const InventoryList: React.FC = () => {
               disabled={!delWeight}
               value={delSpec}
               onChange={setDelSpec}
-              options={summaryOptions.specs.map((s) => ({ label: s, value: s }))}
+              options={summaryOptions.specs.map((s) => ({
+                label: s,
+                value: s,
+              }))}
             />
           </div>
           {delCustomerId && (
-            <div style={{ background: '#fff7e6', padding: 12, borderRadius: 6 }}>
+            <div
+              style={{ background: '#fff7e6', padding: 12, borderRadius: 6 }}
+            >
               <Typography.Text>
-                将删除：<Typography.Text strong>{delCount} 条</Typography.Text> 卷号记录
+                将删除：<Typography.Text strong>{delCount} 条</Typography.Text>{' '}
+                卷号记录
               </Typography.Text>
               <br />
               <Typography.Text type="secondary">

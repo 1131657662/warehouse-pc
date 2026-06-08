@@ -20,6 +20,7 @@ export type OrderExportRow = {
   '克重(kg)': string | number;
   规格: string;
   卷号: string;
+  编号: string;
   '单件重量(吨)': string;
   扫码人: string;
   扫码时间: string;
@@ -34,9 +35,14 @@ export function exportOrderScanExcel(
 ) {
   const validLogs = logs
     .filter((l) => l.action === 'add' && !l.revoked)
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    .sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    );
 
-  const orderStatus = order.temp ? '临时出库' : STATUS_TEXT[order.status] || order.status;
+  const orderStatus = order.temp
+    ? '临时出库'
+    : STATUS_TEXT[order.status] || order.status;
 
   const rows: OrderExportRow[] = validLogs.map((log, idx) => {
     const weightTon = Number(log.piece_weight || 0) / 1000;
@@ -53,6 +59,7 @@ export function exportOrderScanExcel(
       '克重(kg)': log.weight ?? '',
       规格: log.specification || '',
       卷号: log.matched_roll_number || log.raw_barcode,
+      编号: log.code || '',
       '单件重量(吨)': weightTon.toFixed(3),
       扫码人: log.scan_user_name || '',
       扫码时间: log.created_at || '',
@@ -75,6 +82,7 @@ export function exportOrderScanExcel(
       '克重(kg)': '',
       规格: '',
       卷号: '',
+      编号: '',
       '单件重量(吨)': '',
       扫码人: '',
       扫码时间: '',
@@ -95,6 +103,7 @@ export function exportOrderScanExcel(
     { wch: 6 },
     { wch: 14 },
     { wch: 10 },
+    { wch: 14 },
     { wch: 14 },
     { wch: 14 },
     { wch: 12 },

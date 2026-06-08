@@ -1,5 +1,5 @@
-import { Descriptions, Drawer, Spin, Table, Tag, Typography } from 'antd';
 import { history } from '@umijs/max';
+import { Descriptions, Drawer, Spin, Table, Tag, Typography } from 'antd';
 import { useEffect, useState } from 'react';
 import OrderStatusTag from '@/components/Order/OrderStatusTag';
 import { formatModelLabel } from '@/components/Order/orderConstants';
@@ -53,16 +53,39 @@ const RollLifecycleDrawer: React.FC<Props> = ({
       <Spin spinning={loading}>
         {inv ? (
           <>
-            <Descriptions column={2} size="small" bordered style={{ marginBottom: 16 }}>
-              <Descriptions.Item label="客户">{inv.customer_name}</Descriptions.Item>
+            <Descriptions
+              column={2}
+              size="small"
+              bordered
+              style={{ marginBottom: 16 }}
+            >
+              <Descriptions.Item label="卷号">
+                {inv.roll_number}
+              </Descriptions.Item>
+              <Descriptions.Item label="编号">
+                {inv.code || '—'}
+              </Descriptions.Item>
+              <Descriptions.Item label="客户">
+                {inv.customer_name}
+              </Descriptions.Item>
               <Descriptions.Item label="型号">
-                {formatModelLabel(inv.product_name, inv.weight, inv.specification)}
+                {formatModelLabel(
+                  inv.product_name,
+                  inv.weight,
+                  inv.specification,
+                )}
               </Descriptions.Item>
-              <Descriptions.Item label="入库时间">{inv.created_at || '—'}</Descriptions.Item>
+              <Descriptions.Item label="入库时间">
+                {inv.created_at || '—'}
+              </Descriptions.Item>
               <Descriptions.Item label="件重(kg)">
-                {inv.piece_weight != null ? Number(inv.piece_weight).toFixed(1) : '—'}
+                {inv.piece_weight != null
+                  ? Number(inv.piece_weight).toFixed(1)
+                  : '—'}
               </Descriptions.Item>
-              <Descriptions.Item label="在库件数">{inv.quantity}</Descriptions.Item>
+              <Descriptions.Item label="在库件数">
+                {inv.quantity}
+              </Descriptions.Item>
               <Descriptions.Item label="状态">
                 {inv.reserve_status === 'reserved' ? (
                   <Tag color="orange">
@@ -70,7 +93,13 @@ const RollLifecycleDrawer: React.FC<Props> = ({
                     {inv.reserve_order_no ? (
                       <>
                         {' '}
-                        <Link onClick={() => history.push(`/orders/${inv.reserve_order_id}/detail`)}>
+                        <Link
+                          onClick={() =>
+                            history.push(
+                              `/orders/${inv.reserve_order_id}/detail`,
+                            )
+                          }
+                        >
                           {inv.reserve_order_no}
                         </Link>
                       </>
@@ -105,7 +134,13 @@ const RollLifecycleDrawer: React.FC<Props> = ({
                   dataIndex: 'order_no',
                   render: (v: string, r) =>
                     v ? (
-                      <Link onClick={() => history.push(`/orders/${r.order_id}/detail`)}>{v}</Link>
+                      <Link
+                        onClick={() =>
+                          history.push(`/orders/${r.order_id}/detail`)
+                        }
+                      >
+                        {v}
+                      </Link>
                     ) : (
                       '—'
                     ),

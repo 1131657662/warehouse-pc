@@ -5,8 +5,6 @@ import {
   ExclamationCircleOutlined,
   InboxOutlined,
 } from '@ant-design/icons';
-import AppPageContainer from '@/components/AppPageContainer';
-import { history } from '@umijs/max';
 import {
   App,
   Button,
@@ -20,6 +18,7 @@ import {
 import type { ColumnsType } from 'antd/es/table';
 import { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx';
+import AppPageContainer from '@/components/AppPageContainer';
 import { getCustomerList } from '@/services/customers';
 import { getImportReports, importInventory } from '@/services/inventory';
 import {
@@ -35,7 +34,19 @@ const { Text, Title } = Typography;
 const IMPORT_CHUNK_SIZE = 500;
 
 // Excel 模板列头
-const TEMPLATE_HEADERS = ['客户编码', '客户名称', '品名', '克重', '规格', '卷号', '件重(kg)', '件数', '破损', '备注'];
+const TEMPLATE_HEADERS = [
+  '客户编码',
+  '客户名称',
+  '品名',
+  '克重',
+  '规格',
+  '卷号',
+  '编号',
+  '件重(kg)',
+  '件数',
+  '破损',
+  '备注',
+];
 
 interface ParsedRow {
   key: number;
@@ -47,6 +58,7 @@ interface ParsedRow {
   piece_weight: number | null;
   specification: string;
   roll_number: string;
+  code: string;
   quantity: number;
   damaged: string;
   remark: string;
@@ -63,8 +75,12 @@ const ImportPage: React.FC = () => {
   const [importProgress, setImportProgress] = useState('');
 
   // 客户列表（用于校验客户编码+名称是否存在 + ID 映射）
-  const [customerCodeMap, setCustomerCodeMap] = useState<Map<string, { id: number; name: string }>>(new Map());
-  const [customerNameMap, setCustomerNameMap] = useState<Map<string, { id: number; code: string }>>(new Map());
+  const [customerCodeMap, setCustomerCodeMap] = useState<
+    Map<string, { id: number; name: string }>
+  >(new Map());
+  const [customerNameMap, setCustomerNameMap] = useState<
+    Map<string, { id: number; code: string }>
+  >(new Map());
   useEffect(() => {
     getCustomerList().then((res) => {
       if (res.success) {
@@ -92,7 +108,9 @@ const ImportPage: React.FC = () => {
     reportId?: number | null;
   } | null>(null);
 
-  const [recentReports, setRecentReports] = useState<API.ImportReportItem[]>([]);
+  const [recentReports, setRecentReports] = useState<API.ImportReportItem[]>(
+    [],
+  );
 
   const loadRecentReports = () => {
     getImportReports({ current: 1, pageSize: 10 }).then((res) => {
@@ -150,56 +168,104 @@ const ImportPage: React.FC = () => {
       piece_weight: pieceWeight,
       specification: str(IMPORT_FIELD_ALIASES.specification),
       roll_number: roll,
-      quantity: parseInt(qtyStr) || 1,
+      code: str(IMPORT_FIELD_ALIASES.code),
+      quantity: parseInt(qtyStr, 10) || 1,
       damaged: damagedStr,
       remark: str(IMPORT_FIELD_ALIASES.remark),
     };
 
     // ❌ 品名为空
     if (!productName) {
-      return { ...base, customer_name: customerName, status: 'error' as const, message: '品名不能为空' };
+      return {
+        ...base,
+        customer_name: customerName,
+        status: 'error' as const,
+        message: '品名不能为空',
+      };
     }
 
     // ❌ 卷号为空
     if (!roll) {
-      return { ...base, customer_name: customerName, status: 'error' as const, message: '卷号不能为空' };
+      return {
+        ...base,
+        customer_name: customerName,
+        status: 'error' as const,
+        message: '卷号不能为空',
+      };
     }
 
     // ❌ 文件内卷号重复
     if (seenRollNumbers.has(roll)) {
-      return { ...base, customer_name: customerName, status: 'error' as const, message: `文件内卷号重复（与第${seenRollNumbers.get(roll)}行冲突）` };
+      return {
+        ...base,
+        customer_name: customerName,
+        status: 'error' as const,
+        message: `文件内卷号重复（与第${seenRollNumbers.get(roll)}行冲突）`,
+      };
     }
     seenRollNumbers.set(roll, index + 2);
 
     // ❌ 客户名称为空
     if (!customerName) {
-      return { ...base, customer_name: customerName, status: 'error' as const, message: '客户名称不能为空' };
+      return {
+        ...base,
+        customer_name: customerName,
+        status: 'error' as const,
+        message: '客户名称不能为空',
+      };
     }
 
     // ❌ 客户名称不存在
     const nameEntry = nameMap.get(customerName);
     if (!nameEntry) {
-      return { ...base, customer_name: customerName, status: 'error' as const, message: '客户名称不存在' };
+      return {
+        ...base,
+        customer_name: customerName,
+        status: 'error' as const,
+        message: '客户名称不存在',
+      };
     }
 
     // 如果填了客户编码，需校验编码存在且与名称匹配
     if (customerCode) {
       const codeEntry = codeMap.get(customerCode);
       if (!codeEntry) {
-        return { ...base, customer_name: customerName, status: 'error' as const, message: '客户编码不存在' };
+        return {
+          ...base,
+          customer_name: customerName,
+          status: 'error' as const,
+          message: '客户编码不存在',
+        };
       }
       if (codeEntry.id !== nameEntry.id) {
-        return { ...base, customer_name: customerName, status: 'error' as const, message: `客户编码与名称不匹配（编码对应"${codeEntry.name}"，名称对应编码"${nameEntry.code || '无'}"）` };
+        return {
+          ...base,
+          customer_name: customerName,
+          status: 'error' as const,
+          message: `客户编码与名称不匹配（编码对应"${codeEntry.name}"，名称对应编码"${nameEntry.code || '无'}"）`,
+        };
       }
     }
 
     // ⚠️ 克重为空（警告但可导入）
     const weight = weightStr ? parseFloat(weightStr) : null;
     if (!weightStr) {
-      return { ...base, customer_name: customerName, status: 'warning' as const, message: '缺克重（可导入）', weight: null };
+      return {
+        ...base,
+        customer_name: customerName,
+        status: 'warning' as const,
+        message: '缺克重（可导入）',
+        weight: null,
+      };
     }
 
-    return { ...base, customer_name: customerName, weight, status: 'ok' as const, message: '' };
+    return {
+      ...base,
+      customer_name: customerName,
+      weight,
+      status: 'ok' as const,
+      message: '',
+    };
   };
 
   // 解析文件
@@ -216,10 +282,13 @@ const ImportPage: React.FC = () => {
           return;
         }
         const sheet = wb.Sheets[wb.SheetNames[0]];
-        const jsonData = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
-          defval: '',
-          raw: false,
-        });
+        const jsonData = XLSX.utils.sheet_to_json<Record<string, unknown>>(
+          sheet,
+          {
+            defval: '',
+            raw: false,
+          },
+        );
 
         if (jsonData.length === 0) {
           msg.warning('文件为空或无法解析');
@@ -229,13 +298,21 @@ const ImportPage: React.FC = () => {
 
         const seenRollNumbers = new Map<string, number>();
         const parsed = jsonData.map((row, i) =>
-          validateRow(i, row, seenRollNumbers, customerCodeMap, customerNameMap),
+          validateRow(
+            i,
+            row,
+            seenRollNumbers,
+            customerCodeMap,
+            customerNameMap,
+          ),
         );
         setRows(parsed);
         msg.success(`成功解析 ${parsed.length} 条数据`);
       } catch (err: any) {
         console.error('文件解析失败:', err);
-        msg.error('文件解析失败：' + (err?.message || '请检查文件格式，确认使用下载的模板'));
+        msg.error(
+          `文件解析失败：${err?.message || '请检查文件格式，确认使用下载的模板'}`,
+        );
         setRows([]);
       }
     };
@@ -255,14 +332,15 @@ const ImportPage: React.FC = () => {
         row: r.row,
         status: r.status,
         customer_id:
-          customerNameMap.get(r.customer_name)?.id
-          || customerCodeMap.get(r.customer_code)?.id
-          || 0,
+          customerNameMap.get(r.customer_name)?.id ||
+          customerCodeMap.get(r.customer_code)?.id ||
+          0,
         product_name: r.product_name,
         weight: r.weight,
         piece_weight: r.piece_weight,
         specification: r.specification,
         roll_number: r.roll_number,
+        code: r.code || '',
         quantity: r.quantity,
         damaged: r.damaged,
         remark: r.remark,
@@ -270,7 +348,11 @@ const ImportPage: React.FC = () => {
 
       let successCount = 0;
       let skipCount = 0;
-      const allErrors: { row?: number; roll_number?: string; message?: string }[] = [];
+      const allErrors: {
+        row?: number;
+        roll_number?: string;
+        message?: string;
+      }[] = [];
       const totalChunks = Math.ceil(payload.length / IMPORT_CHUNK_SIZE);
       const batchKey = `import-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
       let reportId: number | null = null;
@@ -325,9 +407,12 @@ const ImportPage: React.FC = () => {
     } catch (err: unknown) {
       const apiMsg =
         err && typeof err === 'object' && 'response' in err
-          ? (err as { response?: { data?: { errorMessage?: string } } }).response?.data?.errorMessage
+          ? (err as { response?: { data?: { errorMessage?: string } } })
+              .response?.data?.errorMessage
           : undefined;
-      msg.error(apiMsg || (err instanceof Error ? err.message : '导入请求失败，请重试'));
+      msg.error(
+        apiMsg || (err instanceof Error ? err.message : '导入请求失败，请重试'),
+      );
     } finally {
       setImporting(false);
       setImportProgress('');
@@ -355,7 +440,11 @@ const ImportPage: React.FC = () => {
     if (!resultData) return;
     const errorRows = [
       ['行号', '卷号', '原因'],
-      ...resultData.skipDetails.map((d) => [String(d.row), d.roll_number, d.reason]),
+      ...resultData.skipDetails.map((d) => [
+        String(d.row),
+        d.roll_number,
+        d.reason,
+      ]),
       ...resultData.failDetails.map((d) => [String(d.row), '', d.reason]),
     ];
     const ws = XLSX.utils.aoa_to_sheet(errorRows);
@@ -367,25 +456,67 @@ const ImportPage: React.FC = () => {
   // 预览表格列定义
   const columns: ColumnsType<ParsedRow> = [
     { title: '行', dataIndex: 'row', width: 60 },
-    { title: '状态', dataIndex: 'status', width: 80, render: (s: string) => {
-      if (s === 'ok') return <Tag icon={<CheckCircleOutlined />} color="success">正常</Tag>;
-      if (s === 'warning') return <Tag icon={<ExclamationCircleOutlined />} color="warning">警告</Tag>;
-      return <Tag icon={<CloseCircleOutlined />} color="error">错误</Tag>;
-    }},
+    {
+      title: '状态',
+      dataIndex: 'status',
+      width: 80,
+      render: (s: string) => {
+        if (s === 'ok')
+          return (
+            <Tag icon={<CheckCircleOutlined />} color="success">
+              正常
+            </Tag>
+          );
+        if (s === 'warning')
+          return (
+            <Tag icon={<ExclamationCircleOutlined />} color="warning">
+              警告
+            </Tag>
+          );
+        return (
+          <Tag icon={<CloseCircleOutlined />} color="error">
+            错误
+          </Tag>
+        );
+      },
+    },
     { title: '客户编码', dataIndex: 'customer_code', width: 100 },
     { title: '客户', dataIndex: 'customer_name', width: 120 },
     { title: '品名', dataIndex: 'product_name', width: 120 },
-    { title: '克重', dataIndex: 'weight', width: 80, render: (v: number | null) => v ?? '-' },
+    {
+      title: '克重',
+      dataIndex: 'weight',
+      width: 80,
+      render: (v: number | null) => v ?? '-',
+    },
     { title: '规格', dataIndex: 'specification', width: 100 },
     { title: '卷号', dataIndex: 'roll_number', width: 130 },
-    { title: '件重(kg)', dataIndex: 'piece_weight', width: 90, render: (v: number | null) => v != null ? v : '-' },
+    {
+      title: '编号',
+      dataIndex: 'code',
+      width: 100,
+      render: (v: string) => v || '-',
+    },
+    {
+      title: '件重(kg)',
+      dataIndex: 'piece_weight',
+      width: 90,
+      render: (v: number | null) => (v != null ? v : '-'),
+    },
     { title: '件数', dataIndex: 'quantity', width: 60 },
     { title: '破损', dataIndex: 'damaged', width: 60 },
     { title: '备注', dataIndex: 'remark', width: 100, ellipsis: true },
-    { title: '说明', dataIndex: 'message', width: 200, render: (m: string, r) => {
-      if (!m) return '-';
-      return <Text type={r.status === 'error' ? 'danger' : 'warning'}>{m}</Text>;
-    }},
+    {
+      title: '说明',
+      dataIndex: 'message',
+      width: 200,
+      render: (m: string, r) => {
+        if (!m) return '-';
+        return (
+          <Text type={r.status === 'error' ? 'danger' : 'warning'}>{m}</Text>
+        );
+      },
+    },
   ];
 
   return (
@@ -407,14 +538,17 @@ const ImportPage: React.FC = () => {
             setFile(null);
             setRows([]);
           }}
-          fileList={file ? [{ uid: '-1', name: file.name, status: 'done' }] : []}
+          fileList={
+            file ? [{ uid: '-1', name: file.name, status: 'done' }] : []
+          }
         >
           <p className="ant-upload-drag-icon">
             <InboxOutlined />
           </p>
           <p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
           <p className="ant-upload-hint">
-            支持 .xlsx 和 .csv；卷号列请命名为「卷号」（也兼容：条码、卷筒号）。请使用上方模板，首行为表头
+            支持 .xlsx 和
+            .csv；卷号列请命名为「卷号」（也兼容：条码、卷筒号）。请使用上方模板，首行为表头
           </p>
         </Dragger>
       </div>
@@ -435,7 +569,8 @@ const ImportPage: React.FC = () => {
               showSizeChanger: true,
               showQuickJumper: true,
               pageSizeOptions: [20, 50, 100, 200],
-              showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条，共 ${total} 条`,
+              showTotal: (total, range) =>
+                `第 ${range[0]}-${range[1]} 条，共 ${total} 条`,
             }}
           />
 
@@ -462,9 +597,16 @@ const ImportPage: React.FC = () => {
             <Text style={{ color: '#ff4d4f' }}>
               <CloseCircleOutlined /> {errorCount} 条错误（跳过）
             </Text>
-            <Space style={{ marginLeft: 'auto' }} direction="vertical" align="end" size={4}>
+            <Space
+              style={{ marginLeft: 'auto' }}
+              direction="vertical"
+              align="end"
+              size={4}
+            >
               {importProgress ? (
-                <Text type="secondary" style={{ fontSize: 13 }}>{importProgress}</Text>
+                <Text type="secondary" style={{ fontSize: 13 }}>
+                  {importProgress}
+                </Text>
               ) : null}
               <Button
                 type="primary"
@@ -486,11 +628,19 @@ const ImportPage: React.FC = () => {
         onCancel={() => setResultOpen(false)}
         footer={[
           resultData && (
-            <Button key="download" icon={<DownloadOutlined />} onClick={() => handleDownloadReport()}>
+            <Button
+              key="download"
+              icon={<DownloadOutlined />}
+              onClick={() => handleDownloadReport()}
+            >
               {resultData.reportId ? '下载完整报告' : '下载失败明细 Excel'}
             </Button>
           ),
-          <Button key="close" type="primary" onClick={() => setResultOpen(false)}>
+          <Button
+            key="close"
+            type="primary"
+            onClick={() => setResultOpen(false)}
+          >
             关闭
           </Button>,
         ]}
@@ -499,25 +649,43 @@ const ImportPage: React.FC = () => {
         {resultData && (
           <Space direction="vertical" style={{ width: '100%' }} size="middle">
             <div>
-              <Text><CheckCircleOutlined style={{ color: '#52c41a' }} /> 成功导入：<Text strong>{resultData.successCount}</Text> 条</Text>
+              <Text>
+                <CheckCircleOutlined style={{ color: '#52c41a' }} /> 成功导入：
+                <Text strong>{resultData.successCount}</Text> 条
+              </Text>
             </div>
             <div>
-              <Text>⏭️ 跳过（已存在）：<Text strong style={{ color: '#faad14' }}>{resultData.skipCount}</Text> 条</Text>
+              <Text>
+                ⏭️ 跳过（已存在）：
+                <Text strong style={{ color: '#faad14' }}>
+                  {resultData.skipCount}
+                </Text>{' '}
+                条
+              </Text>
             </div>
             <div>
-              <Text><CloseCircleOutlined style={{ color: '#ff4d4f' }} /> 失败（验证不通过）：<Text strong style={{ color: '#ff4d4f' }}>{resultData.failCount}</Text> 条</Text>
+              <Text>
+                <CloseCircleOutlined style={{ color: '#ff4d4f' }} />{' '}
+                失败（验证不通过）：
+                <Text strong style={{ color: '#ff4d4f' }}>
+                  {resultData.failCount}
+                </Text>{' '}
+                条
+              </Text>
             </div>
 
             {resultData.skipDetails.length > 0 && (
               <div>
                 <Text type="secondary">跳过详情（卷号已存在）：</Text>
-                {resultData.skipDetails.slice(0, 10).map((d, i) => (
-                  <div key={i} style={{ fontSize: 13, marginLeft: 12 }}>
+                {resultData.skipDetails.slice(0, 10).map((d) => (
+                  <div key={d.row} style={{ fontSize: 13, marginLeft: 12 }}>
                     第 {d.row} 行：卷号 {d.roll_number} {d.reason}
                   </div>
                 ))}
                 {resultData.skipDetails.length > 10 && (
-                  <Text type="secondary">...还有 {resultData.skipDetails.length - 10} 条</Text>
+                  <Text type="secondary">
+                    ...还有 {resultData.skipDetails.length - 10} 条
+                  </Text>
                 )}
               </div>
             )}
@@ -525,13 +693,18 @@ const ImportPage: React.FC = () => {
             {resultData.failDetails.length > 0 && (
               <div>
                 <Text type="secondary">失败详情：</Text>
-                {resultData.failDetails.slice(0, 10).map((d, i) => (
-                  <div key={i} style={{ fontSize: 13, marginLeft: 12, color: '#ff4d4f' }}>
+                {resultData.failDetails.slice(0, 10).map((d) => (
+                  <div
+                    key={d.row}
+                    style={{ fontSize: 13, marginLeft: 12, color: '#ff4d4f' }}
+                  >
                     第 {d.row} 行：{d.reason}
                   </div>
                 ))}
                 {resultData.failDetails.length > 10 && (
-                  <Text type="secondary">...还有 {resultData.failDetails.length - 10} 条</Text>
+                  <Text type="secondary">
+                    ...还有 {resultData.failDetails.length - 10} 条
+                  </Text>
                 )}
               </div>
             )}
@@ -559,7 +732,11 @@ const ImportPage: React.FC = () => {
                 title: '操作',
                 width: 90,
                 render: (_, r) => (
-                  <Button type="link" size="small" onClick={() => handleDownloadReport(r.id)}>
+                  <Button
+                    type="link"
+                    size="small"
+                    onClick={() => handleDownloadReport(r.id)}
+                  >
                     下载
                   </Button>
                 ),

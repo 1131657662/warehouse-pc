@@ -8,7 +8,17 @@ import {
   ProFormTextArea,
 } from '@ant-design/pro-components';
 import { history, useSearchParams } from '@umijs/max';
-import { App, Button, Empty, Input, InputNumber, Space, Spin, Table, Typography } from 'antd';
+import {
+  App,
+  Button,
+  Empty,
+  Input,
+  InputNumber,
+  Space,
+  Spin,
+  Table,
+  Typography,
+} from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
 import { useEffect, useMemo, useState } from 'react';
@@ -19,8 +29,16 @@ import AddModelModal, {
 } from '@/components/Order/AddModelModal';
 import { formatModelLabel } from '@/components/Order/orderConstants';
 import { getCustomerList } from '@/services/customers';
-import { getInventoryModelSummary } from '@/services/inventory';
+import {
+  getInventoryList,
+  getInventoryModelSummary,
+} from '@/services/inventory';
 import { createOrder, getOrderDetail, updateOrder } from '@/services/orders';
+import {
+  applyStockCodeMap,
+  buildModelCodeLabelMap,
+  mergeSummaryStockCodes,
+} from '@/utils/inventoryModelCodes';
 
 const { Text } = Typography;
 
@@ -31,6 +49,7 @@ interface DetailRow {
   specification: string;
   stock_qty: number;
   stock_ton: number;
+  stock_codes: string;
   planned_qty: number;
   estimated_ton: number;
   remark: string;
@@ -39,13 +58,20 @@ interface DetailRow {
 function buildDetailRowsFromItems(items: API.OrderDetailItem[]): DetailRow[] {
   const modelMap = new Map<
     string,
-    { planned_qty: number; remark: string; stock_qty: number; stock_ton: number; estimated_ton: number }
+    {
+      planned_qty: number;
+      remark: string;
+      stock_qty: number;
+      stock_ton: number;
+      estimated_ton: number;
+    }
   >();
   for (const item of items) {
     const key = `${item.product_name}|${item.weight}|${item.specification}`;
     const lineTon = Number(item.estimated_ton || 0);
     if (modelMap.has(key)) {
-      const row = modelMap.get(key)!;
+      const row = modelMap.get(key);
+      if (!row) continue;
       row.planned_qty += item.planned_qty;
       row.estimated_ton += lineTon;
     } else {
@@ -68,6 +94,7 @@ function buildDetailRowsFromItems(items: API.OrderDetailItem[]): DetailRow[] {
       specification,
       stock_qty: m.stock_qty,
       stock_ton: m.stock_ton,
+      stock_codes: '',
       planned_qty: m.planned_qty,
       estimated_ton: m.estimated_ton,
       remark: m.remark,
@@ -157,7 +184,9 @@ const CreateOrderPage: React.FC = () => {
           container_no: order.container_no,
           remark: order.remark,
         });
-        const plannedItems = (order.items || []).filter((it) => !it.is_unplanned);
+        const plannedItems = (order.items || []).filter(
+          (it) => !it.is_unplanned,
+        );
         let rows = buildDetailRowsFromItems(plannedItems);
         try {
           const stockRes = await getInventoryModelSummary(order.customer_id);
@@ -181,27 +210,60 @@ const CreateOrderPage: React.FC = () => {
                 ...r,
                 stock_qty: stockQty,
                 stock_ton: stockTon,
-                estimated_ton: stockQty > 0
-                  ? Number(((stockTon / stockQty) * r.planned_qty).toFixed(3))
-                  : r.estimated_ton,
+                estimated_ton:
+                  stockQty > 0
+                    ? Number(((stockTon / stockQty) * r.planned_qty).toFixed(3))
+                    : r.estimated_ton,
               };
             });
           }
         } catch {
           /* ignore */
         }
+        rows = mergeSummaryStockCodes(rows, order.summary || []);
+        try {
+          const invRes = await getInventoryList({
+            customer_id: order.customer_id,
+            pageSize: 5000,
+          });
+          if (invRes.success && invRes.data?.list) {
+            rows = applyStockCodeMap(
+              rows,
+              buildModelCodeLabelMap(invRes.data.list),
+            );
+          }
+        } catch {
+          /* ignore */
+        }
         setDetails(rows);
-        message.success(`已从 ${order.order_no} 复制明细，请核对库存与件数后创建`);
+        message.success(
+          `已从 ${order.order_no} 复制明细，请核对库存与件数后创建`,
+        );
       })
       .finally(() => setLoadingData(false));
   }, [copyFromId, form, message]);
+
+  useEffect(() => {
+    if (!customerId || details.length === 0) return;
+    let cancelled = false;
+    getInventoryList({ customer_id: customerId, pageSize: 5000 })
+      .then((res) => {
+        if (cancelled || !res.success) return;
+        const codeMap = buildModelCodeLabelMap(res.data?.list || []);
+        setDetails((prev) => applyStockCodeMap(prev, codeMap));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [customerId]);
 
   const existingModelKeys = useMemo(
     () => new Set(details.map((d) => modelKey(d))),
     [details],
   );
 
-  const handleAddModels = (models: InventoryModelOption[]) => {
+  const handleAddModels = async (models: InventoryModelOption[]) => {
     const next: DetailRow[] = [...details];
     let added = 0;
     for (const model of models) {
@@ -214,6 +276,7 @@ const CreateOrderPage: React.FC = () => {
         specification: model.specification,
         stock_qty: model.stock_qty,
         stock_ton: model.stock_ton,
+        stock_codes: '',
         planned_qty: 0,
         estimated_ton: 0,
         remark: '',
@@ -224,20 +287,51 @@ const CreateOrderPage: React.FC = () => {
       message.warning('所选型号均已在明细中');
       return;
     }
-    setDetails(next);
+    if (customerId) {
+      try {
+        const res = await getInventoryList({
+          customer_id: customerId,
+          pageSize: 5000,
+        });
+        if (res.success) {
+          setDetails(
+            applyStockCodeMap(
+              next,
+              buildModelCodeLabelMap(res.data?.list || []),
+            ),
+          );
+        } else {
+          setDetails(next);
+        }
+      } catch {
+        setDetails(next);
+      }
+    } else {
+      setDetails(next);
+    }
     setModelOpen(false);
     message.success(`已加入 ${added} 个型号，请在下方填写发货件数`);
   };
 
-  const updateDetail = (key: string, field: keyof DetailRow, value: number | string) => {
+  const updateDetail = (
+    key: string,
+    field: keyof DetailRow,
+    value: number | string,
+  ) => {
     setDetails((prev) =>
       prev.map((d) => {
         if (d.key !== key) return d;
         const updated = { ...d, [field]: value };
         if (field === 'planned_qty') {
-          updated.estimated_ton = updated.stock_qty > 0
-            ? Number(((updated.stock_ton / updated.stock_qty) * (updated.planned_qty as number)).toFixed(3))
-            : 0;
+          updated.estimated_ton =
+            updated.stock_qty > 0
+              ? Number(
+                  (
+                    (updated.stock_ton / updated.stock_qty) *
+                    (updated.planned_qty as number)
+                  ).toFixed(3),
+                )
+              : 0;
         }
         return updated;
       }),
@@ -249,7 +343,15 @@ const CreateOrderPage: React.FC = () => {
     {
       title: '型号',
       width: 220,
-      render: (_, r) => formatModelLabel(r.product_name, r.weight, r.specification),
+      render: (_, r) =>
+        formatModelLabel(r.product_name, r.weight, r.specification),
+    },
+    {
+      title: '编号',
+      dataIndex: 'stock_codes',
+      width: 120,
+      ellipsis: true,
+      render: (v: string) => v || '—',
     },
     {
       title: '可用库存',
@@ -304,7 +406,9 @@ const CreateOrderPage: React.FC = () => {
           type="text"
           danger
           icon={<DeleteOutlined />}
-          onClick={() => setDetails((p) => p.filter((d) => d.key !== record.key))}
+          onClick={() =>
+            setDetails((p) => p.filter((d) => d.key !== record.key))
+          }
         />
       ),
     },
@@ -353,9 +457,7 @@ const CreateOrderPage: React.FC = () => {
         : await createOrder(body);
       if (res.success) {
         message.success(
-          isEdit
-            ? '订单已保存'
-            : `订单 ${res.data?.order_no || ''} 已创建`,
+          isEdit ? '订单已保存' : `订单 ${res.data?.order_no || ''} 已创建`,
         );
         history.push('/orders');
       } else {
@@ -374,7 +476,9 @@ const CreateOrderPage: React.FC = () => {
       await handleSubmit(values);
     } catch (err: unknown) {
       const errorFields = (
-        err as { errorFields?: { name: (string | number)[]; errors: string[] }[] }
+        err as {
+          errorFields?: { name: (string | number)[]; errors: string[] }[];
+        }
       )?.errorFields;
       if (errorFields?.length) {
         message.warning(errorFields[0].errors?.[0] || '请先完善订单信息');
@@ -416,7 +520,9 @@ const CreateOrderPage: React.FC = () => {
         layout="horizontal"
         submitter={false}
         onFinish={handleSubmit}
-        onFinishFailed={() => message.warning('请先完善订单信息（客户、日期为必填）')}
+        onFinishFailed={() =>
+          message.warning('请先完善订单信息（客户、日期为必填）')
+        }
         initialValues={{ order_date: dayjs() }}
         labelCol={{ flex: '0 0 72px' }}
       >
@@ -441,7 +547,11 @@ const CreateOrderPage: React.FC = () => {
             <ProFormText name="vehicle_no" label="车号" width="sm" />
             <ProFormText name="container_no" label="箱号" width="sm" />
           </ProForm.Group>
-          <ProFormTextArea name="remark" label="备注" fieldProps={{ rows: 2 }} />
+          <ProFormTextArea
+            name="remark"
+            label="备注"
+            fieldProps={{ rows: 2 }}
+          />
         </ProCard>
 
         <ProCard

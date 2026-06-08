@@ -2,7 +2,6 @@ import { ProCard } from '@ant-design/pro-components';
 import { Button, Input, Popconfirm, Space, Table, Tag, Typography } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { useMemo, useState } from 'react';
-import { formatModelLabel } from './orderConstants';
 
 const { Text } = Typography;
 
@@ -92,6 +91,12 @@ const OutboundScanTable: React.FC<Props> = ({
       dataIndex: 'matched_roll_number',
       width: 130,
       render: (v: string, r) => v || r.raw_barcode || '-',
+    },
+    {
+      title: '编号',
+      dataIndex: 'code',
+      width: 100,
+      render: (v: string) => v || '-',
     },
     {
       title: '件重(kg)',
@@ -202,7 +207,11 @@ const OutboundScanTable: React.FC<Props> = ({
               }
             : undefined
         }
-        pagination={{ pageSize: 15, showSizeChanger: true, showTotal: (t) => `共 ${t} 条` }}
+        pagination={{
+          pageSize: 15,
+          showSizeChanger: true,
+          showTotal: (t) => `共 ${t} 条`,
+        }}
         size="middle"
         scroll={{ x: 1200 }}
         className="wh-outbound-log-table"

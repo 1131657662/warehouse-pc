@@ -7,7 +7,18 @@ import {
   ProFormTextArea,
 } from '@ant-design/pro-components';
 import { history, useAccess, useParams } from '@umijs/max';
-import { App, Alert, Button, Empty, Input, InputNumber, Space, Spin, Table, Typography } from 'antd';
+import {
+  Alert,
+  App,
+  Button,
+  Empty,
+  Input,
+  InputNumber,
+  Space,
+  Spin,
+  Table,
+  Typography,
+} from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
 import { useEffect, useMemo, useState } from 'react';
@@ -28,6 +39,7 @@ interface DetailRow {
   specification: string;
   stock_qty: number;
   stock_ton: number;
+  stock_codes: string;
   actual_qty: number;
   planned_qty: number;
   estimated_ton: number;
@@ -48,7 +60,10 @@ const ConvertTempPage: React.FC = () => {
   const [customerId, setCustomerId] = useState<number | undefined>();
   const [orderNo, setOrderNo] = useState('');
 
-  const customerIdWatch: number | undefined = ProForm.useWatch('customer_id', form);
+  const customerIdWatch: number | undefined = ProForm.useWatch(
+    'customer_id',
+    form,
+  );
 
   useEffect(() => {
     if (!access.canPcOutbound) return;
@@ -94,8 +109,10 @@ const ConvertTempPage: React.FC = () => {
             specification: s.specification,
             stock_qty: 0,
             stock_ton: 0,
+            stock_codes: s.scanned_codes || s.stock_codes || s.codes || '',
             actual_qty: s.actual_qty,
-            planned_qty: Math.max(s.actual_qty, s.planned_qty || 0) || s.actual_qty,
+            planned_qty:
+              Math.max(s.actual_qty, s.planned_qty || 0) || s.actual_qty,
             estimated_ton: Number(s.estimated_ton || s.actual_ton || 0),
             remark: '',
           }));
@@ -124,6 +141,7 @@ const ConvertTempPage: React.FC = () => {
         specification: model.specification,
         stock_qty: model.stock_qty,
         stock_ton: model.stock_ton,
+        stock_codes: '',
         actual_qty: 0,
         planned_qty: 0,
         estimated_ton: 0,
@@ -140,14 +158,21 @@ const ConvertTempPage: React.FC = () => {
     message.success(`已加入 ${added} 个型号，请填写计划件数`);
   };
 
-  const updateDetail = (key: string, field: keyof DetailRow, value: number | string) => {
+  const updateDetail = (
+    key: string,
+    field: keyof DetailRow,
+    value: number | string,
+  ) => {
     setDetails((prev) =>
       prev.map((d) => {
         if (d.key !== key) return d;
         const updated = { ...d, [field]: value };
         if (field === 'planned_qty' && updated.stock_qty > 0) {
           updated.estimated_ton = Number(
-            ((updated.stock_ton / updated.stock_qty) * (updated.planned_qty as number)).toFixed(3),
+            (
+              (updated.stock_ton / updated.stock_qty) *
+              (updated.planned_qty as number)
+            ).toFixed(3),
           );
         }
         return updated;
@@ -160,13 +185,22 @@ const ConvertTempPage: React.FC = () => {
     {
       title: '型号',
       width: 220,
-      render: (_, r) => formatModelLabel(r.product_name, r.weight, r.specification),
+      render: (_, r) =>
+        formatModelLabel(r.product_name, r.weight, r.specification),
+    },
+    {
+      title: '编号',
+      dataIndex: 'stock_codes',
+      width: 120,
+      ellipsis: true,
+      render: (v: string) => v || '—',
     },
     {
       title: '已扫',
       width: 72,
       align: 'center',
-      render: (_, r) => (r.actual_qty > 0 ? <Text strong>{r.actual_qty}</Text> : '—'),
+      render: (_, r) =>
+        r.actual_qty > 0 ? <Text strong>{r.actual_qty}</Text> : '—',
     },
     {
       title: '可用库存',
@@ -225,7 +259,9 @@ const ConvertTempPage: React.FC = () => {
             type="text"
             danger
             icon={<DeleteOutlined />}
-            onClick={() => setDetails((p) => p.filter((d) => d.key !== record.key))}
+            onClick={() =>
+              setDetails((p) => p.filter((d) => d.key !== record.key))
+            }
           />
         ),
     },
@@ -242,7 +278,9 @@ const ConvertTempPage: React.FC = () => {
         return;
       }
       if (d.planned_qty < d.actual_qty) {
-        message.warning(`${d.product_name} 计划件数不能小于已扫件数（${d.actual_qty}）`);
+        message.warning(
+          `${d.product_name} 计划件数不能小于已扫件数（${d.actual_qty}）`,
+        );
         return;
       }
       if (d.stock_qty > 0 && d.planned_qty > d.stock_qty) {
@@ -303,11 +341,24 @@ const ConvertTempPage: React.FC = () => {
             style={{ marginBottom: 16 }}
             message="为临时单补全计划明细后转为正式订单。已扫型号计划件数须 ≥ 已扫件数；未扫过的型号可删除。"
           />
-          <ProForm form={form} layout="vertical" onFinish={handleSubmit} submitter={false}>
-            <ProFormDatePicker name="order_date" label="下单日期" rules={[{ required: true }]} />
+          <ProForm
+            form={form}
+            layout="vertical"
+            onFinish={handleSubmit}
+            submitter={false}
+          >
+            <ProFormDatePicker
+              name="order_date"
+              label="下单日期"
+              rules={[{ required: true }]}
+            />
             <ProFormText name="vehicle_no" label="车号" />
             <ProFormText name="container_no" label="箱号" />
-            <ProFormTextArea name="remark" label="备注" fieldProps={{ rows: 2 }} />
+            <ProFormTextArea
+              name="remark"
+              label="备注"
+              fieldProps={{ rows: 2 }}
+            />
 
             <ProCard
               title="计划明细"
@@ -338,10 +389,16 @@ const ConvertTempPage: React.FC = () => {
             </ProCard>
 
             <Space style={{ marginTop: 24 }}>
-              <Button type="primary" loading={submitting} onClick={() => form.submit()}>
+              <Button
+                type="primary"
+                loading={submitting}
+                onClick={() => form.submit()}
+              >
                 确认转正
               </Button>
-              <Button onClick={() => history.push(`/orders/${orderId}/detail`)}>取消</Button>
+              <Button onClick={() => history.push(`/orders/${orderId}/detail`)}>
+                取消
+              </Button>
             </Space>
           </ProForm>
 

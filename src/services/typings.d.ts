@@ -42,6 +42,7 @@ declare namespace API {
     piece_weight: number | null;
     specification: string;
     roll_number: string;
+    code?: string;
     quantity: number;
     damaged: string;
     remark: string;
@@ -60,6 +61,7 @@ declare namespace API {
     piece_weight?: number;
     specification?: string;
     roll_number: string;
+    code?: string;
     quantity?: number;
     damaged?: string;
     remark?: string;
@@ -76,6 +78,7 @@ declare namespace API {
     total_damaged: number;
     total_reserved: number;
     total_ton: number;
+    stock_codes?: string;
   };
 
   type RollLifecycleOutbound = {
@@ -126,6 +129,7 @@ declare namespace API {
     piece_weight: number | null;
     specification: string;
     roll_number: string;
+    code?: string;
     quantity: number;
     damaged: string;
     remark: string;
@@ -235,6 +239,9 @@ declare namespace API {
     remaining: number;
     percent: number;
     is_unplanned?: boolean;
+    codes?: string;
+    stock_codes?: string;
+    scanned_codes?: string;
   };
 
   type ReportConfigItem = {
@@ -257,6 +264,7 @@ declare namespace API {
     scan_user_name: string;
     raw_barcode: string;
     matched_roll_number: string;
+    code?: string;
     product_name?: string;
     weight?: number | null;
     piece_weight?: number | null;
