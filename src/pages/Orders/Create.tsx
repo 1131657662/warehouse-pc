@@ -39,6 +39,7 @@ import {
   buildModelCodeLabelMap,
   mergeSummaryStockCodes,
 } from '@/utils/inventoryModelCodes';
+import { formatTonDisplay } from '@/utils/modelDisplay';
 
 const { Text } = Typography;
 
@@ -212,7 +213,7 @@ const CreateOrderPage: React.FC = () => {
                 stock_ton: stockTon,
                 estimated_ton:
                   stockQty > 0
-                    ? Number(((stockTon / stockQty) * r.planned_qty).toFixed(3))
+                    ? (stockTon / stockQty) * r.planned_qty
                     : r.estimated_ton,
               };
             });
@@ -325,12 +326,8 @@ const CreateOrderPage: React.FC = () => {
         if (field === 'planned_qty') {
           updated.estimated_ton =
             updated.stock_qty > 0
-              ? Number(
-                  (
-                    (updated.stock_ton / updated.stock_qty) *
-                    (updated.planned_qty as number)
-                  ).toFixed(3),
-                )
+              ? (updated.stock_ton / updated.stock_qty) *
+                (updated.planned_qty as number)
               : 0;
         }
         return updated;
@@ -360,7 +357,7 @@ const CreateOrderPage: React.FC = () => {
         <Space direction="vertical" size={0}>
           <Text strong>{r.stock_qty} 件</Text>
           <Text type="secondary" style={{ fontSize: 12 }}>
-            约 {r.stock_ton.toFixed(3)} 吨
+            约 {formatTonDisplay(r.stock_ton)} 吨
           </Text>
         </Space>
       ),
@@ -385,7 +382,7 @@ const CreateOrderPage: React.FC = () => {
       title: '预估吨位',
       dataIndex: 'estimated_ton',
       width: 96,
-      render: (v: number) => v.toFixed(3),
+      render: (v: number) => formatTonDisplay(v),
     },
     {
       title: '备注',
@@ -592,7 +589,7 @@ const CreateOrderPage: React.FC = () => {
               <div style={{ marginTop: 16, textAlign: 'right' }}>
                 <Text type="secondary">
                   合计预发 <Text strong>{totalPlanned}</Text> 件 · 预估{' '}
-                  <Text strong>{totalTon.toFixed(3)}</Text> 吨
+                  <Text strong>{formatTonDisplay(totalTon)}</Text> 吨
                 </Text>
               </div>
             </>

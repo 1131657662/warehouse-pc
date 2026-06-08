@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import OrderStatusTag from '@/components/Order/OrderStatusTag';
 import { formatModelLabel } from '@/components/Order/orderConstants';
 import { getInventoryLifecycle } from '@/services/inventory';
+import { formatPieceWeightDisplay } from '@/utils/modelDisplay';
 
 const { Link, Text } = Typography;
 
@@ -79,9 +80,7 @@ const RollLifecycleDrawer: React.FC<Props> = ({
                 {inv.created_at || '—'}
               </Descriptions.Item>
               <Descriptions.Item label="件重(kg)">
-                {inv.piece_weight != null
-                  ? Number(inv.piece_weight).toFixed(1)
-                  : '—'}
+                {formatPieceWeightDisplay(inv.piece_weight)}
               </Descriptions.Item>
               <Descriptions.Item label="在库件数">
                 {inv.quantity}

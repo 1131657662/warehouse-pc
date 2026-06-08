@@ -1,7 +1,8 @@
 import { App, Button, Drawer, Input, Modal, Space, Table, Tag } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
-import { getAvailableRolls, manualOutbound } from '@/services/orders';
 import { MODEL_SEARCH_PLACEHOLDER } from '@/constants/modelSearch';
+import { getAvailableRolls, manualOutbound } from '@/services/orders';
+import { formatPieceWeightDisplay } from '@/utils/modelDisplay';
 import { shouldIgnoreProTableRowClick } from '@/utils/proTableConfig';
 import { formatModelLabel } from './orderConstants';
 
@@ -34,7 +35,9 @@ const RollPickerDrawer: React.FC<Props> = ({
   const [submitting, setSubmitting] = useState(false);
   const [rolls, setRolls] = useState<API.AvailableRoll[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
-  const [selectedMeta, setSelectedMeta] = useState<Map<string, API.AvailableRoll>>(new Map());
+  const [selectedMeta, setSelectedMeta] = useState<
+    Map<string, API.AvailableRoll>
+  >(new Map());
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
   const [total, setTotal] = useState(0);
@@ -90,7 +93,8 @@ const RollPickerDrawer: React.FC<Props> = ({
 
   const toggleAllOnPage = () => {
     const ids = availableRolls.map((r) => r.roll_number);
-    const allSelected = ids.length > 0 && ids.every((id) => selected.includes(id));
+    const allSelected =
+      ids.length > 0 && ids.every((id) => selected.includes(id));
     if (allSelected) {
       syncSelection(selected.filter((k) => !ids.includes(k)));
     } else {
@@ -107,7 +111,9 @@ const RollPickerDrawer: React.FC<Props> = ({
     try {
       const res = await manualOutbound(orderId, { roll_numbers: rollNumbers });
       if (res.success) {
-        message.success(res.errorMessage || `成功出库 ${rollNumbers.length} 卷`);
+        message.success(
+          res.errorMessage || `成功出库 ${rollNumbers.length} 卷`,
+        );
         onSuccess();
         onClose();
       } else {
@@ -147,7 +153,9 @@ const RollPickerDrawer: React.FC<Props> = ({
       return;
     }
 
-    const rollsToSubmit = selected.map((k) => selectedMeta.get(k)).filter(Boolean) as API.AvailableRoll[];
+    const rollsToSubmit = selected
+      .map((k) => selectedMeta.get(k))
+      .filter(Boolean) as API.AvailableRoll[];
     const inPlan = rollsToSubmit.filter((r) => r.in_plan !== false);
     const outOfPlan = rollsToSubmit.filter((r) => r.in_plan === false);
 
@@ -167,7 +175,8 @@ const RollPickerDrawer: React.FC<Props> = ({
             卷不在本单计划型号内。
           </p>
           <p style={{ color: '#64748b', marginBottom: 0 }}>
-            计划内 {inPlan.length} 卷 · 计划外 {outOfPlan.length} 卷。计划外加入后，履约看板将单独显示且计划件数/吨位为 0。
+            计划内 {inPlan.length} 卷 · 计划外 {outOfPlan.length}{' '}
+            卷。计划外加入后，履约看板将单独显示且计划件数/吨位为 0。
           </p>
         </div>
       ),
@@ -213,7 +222,8 @@ const RollPickerDrawer: React.FC<Props> = ({
     >
       {modelFilter?.product_name ? (
         <div style={{ marginBottom: 12, color: '#64748b' }}>
-          型号：{formatModelLabel(
+          型号：
+          {formatModelLabel(
             modelFilter.product_name,
             modelFilter.weight,
             modelFilter.specification,
@@ -236,7 +246,8 @@ const RollPickerDrawer: React.FC<Props> = ({
             : `本页全选可出库 (${availableRolls.length})`}
         </Button>
         <span style={{ color: '#94a3b8', fontSize: 12 }}>
-          共 {total} 卷匹配，已选 {selected.length} 卷（可翻页继续选；计划外卷号标橙）
+          共 {total} 卷匹配，已选 {selected.length}{' '}
+          卷（可翻页继续选；计划外卷号标橙）
         </span>
       </Space>
       <Table
@@ -292,7 +303,7 @@ const RollPickerDrawer: React.FC<Props> = ({
             title: '件重(kg)',
             dataIndex: 'piece_weight',
             width: 90,
-            render: (v: number | null) => (v != null ? Number(v).toFixed(3) : '-'),
+            render: (v: number | null) => formatPieceWeightDisplay(v),
           },
           {
             title: '状态',

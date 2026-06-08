@@ -10,7 +10,11 @@ import { formatModelLabel } from '@/components/Order/orderConstants';
 import { MODEL_SEARCH_PLACEHOLDER } from '@/constants/modelSearch';
 import { getCustomerList } from '@/services/customers';
 import { getOutboundTrace, type OutboundTraceRow } from '@/services/outbound';
-import { formatSpecDisplay, formatWeightDisplay } from '@/utils/modelDisplay';
+import {
+  formatPieceWeightDisplay,
+  formatSpecDisplay,
+  formatWeightDisplay,
+} from '@/utils/modelDisplay';
 import { useProTableResize } from '@/utils/proTableConfig';
 
 const { Text, Link } = Typography;
@@ -102,8 +106,7 @@ const OutboundTracePage: React.FC = () => {
         dataIndex: 'piece_weight',
         width: 90,
         hideInSearch: true,
-        render: (_, r) =>
-          r.piece_weight != null ? Number(r.piece_weight).toFixed(3) : '-',
+        render: (_, r) => formatPieceWeightDisplay(r.piece_weight),
       },
       {
         title: '出库时间',

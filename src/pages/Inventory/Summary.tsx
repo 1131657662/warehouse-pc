@@ -12,7 +12,12 @@ import {
   getInventorySummary,
   refreshModelSummary,
 } from '@/services/inventory';
-import { formatSpecDisplay, formatWeightDisplay } from '@/utils/modelDisplay';
+import {
+  formatPieceWeightDisplay,
+  formatSpecDisplay,
+  formatTonDisplay,
+  formatWeightDisplay,
+} from '@/utils/modelDisplay';
 import { useProTableResize } from '@/utils/proTableConfig';
 
 const InventorySummaryPage: React.FC = () => {
@@ -179,7 +184,7 @@ const InventorySummaryPage: React.FC = () => {
         align: 'center',
         hideInSearch: true,
         render: (_: any, r: API.InventorySummary) =>
-          r.total_ton != null ? Number(r.total_ton).toFixed(3) : '-',
+          formatTonDisplay(r.total_ton),
       },
       {
         key: 'actions',
@@ -268,8 +273,7 @@ const InventorySummaryPage: React.FC = () => {
               title: '件重(kg)',
               dataIndex: 'piece_weight',
               width: 100,
-              render: (v: number | null) =>
-                v != null ? Number(v).toFixed(1) : '-',
+              render: (v: number | null) => formatPieceWeightDisplay(v),
             },
             { title: '破损', dataIndex: 'damaged', width: 80 },
             {

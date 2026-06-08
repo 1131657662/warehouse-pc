@@ -25,7 +25,11 @@ import {
   IMPORT_FIELD_ALIASES,
   pickImportField,
 } from '@/utils/inventoryImportParse';
-import { formatSpecDisplay, formatWeightDisplay } from '@/utils/modelDisplay';
+import {
+  formatPieceWeightDisplay,
+  formatSpecDisplay,
+  formatWeightDisplay,
+} from '@/utils/modelDisplay';
 import { downloadAuthenticatedFile } from '@/utils/scanLogs';
 
 const { Dragger } = Upload;
@@ -507,7 +511,7 @@ const ImportPage: React.FC = () => {
       title: '件重(kg)',
       dataIndex: 'piece_weight',
       width: 90,
-      render: (v: number | null) => (v != null ? v : '-'),
+      render: (v: number | null) => formatPieceWeightDisplay(v),
     },
     { title: '件数', dataIndex: 'quantity', width: 60 },
     { title: '破损', dataIndex: 'damaged', width: 60 },

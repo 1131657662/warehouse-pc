@@ -1,7 +1,11 @@
 import { ProCard } from '@ant-design/pro-components';
 import { Space, Table, Tag, Typography } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { formatSpecDisplay, formatWeightDisplay } from '@/utils/modelDisplay';
+import {
+  formatSpecDisplay,
+  formatTonDisplay,
+  formatWeightDisplay,
+} from '@/utils/modelDisplay';
 
 const { Text } = Typography;
 
@@ -129,7 +133,7 @@ const OrderFulfillmentBoard: React.FC<Props> = ({ order }) => {
             <Text type="secondary">
               {order.temp || r.is_unplanned
                 ? '—'
-                : Number(r.estimated_ton || 0).toFixed(3)}
+                : formatTonDisplay(r.estimated_ton)}
             </Text>
           ),
         },
@@ -155,7 +159,7 @@ const OrderFulfillmentBoard: React.FC<Props> = ({ order }) => {
           align: 'right',
           render: (_, r) => (
             <Text strong style={{ color: '#0070F3' }}>
-              {Number(r.actual_ton || 0).toFixed(3)}
+              {formatTonDisplay(r.actual_ton)}
             </Text>
           ),
         },
@@ -212,7 +216,7 @@ const OrderFulfillmentBoard: React.FC<Props> = ({ order }) => {
             />
             <MetricCell
               label="累计吨位"
-              qty={actualTon.toFixed(3)}
+              qty={formatTonDisplay(actualTon)}
               unit="吨"
               tonLabel="按实扫卷重累计"
               tone="primary"
@@ -224,12 +228,12 @@ const OrderFulfillmentBoard: React.FC<Props> = ({ order }) => {
               <MetricCell
                 label="计划出库"
                 qty={String(plannedQty)}
-                tonLabel={`预估 ${plannedTon.toFixed(3)} 吨`}
+                tonLabel={`预估 ${formatTonDisplay(plannedTon)} 吨`}
               />
               <MetricCell
                 label="实际出库"
                 qty={String(actualQty)}
-                tonLabel={`实扫 ${actualTon.toFixed(3)} 吨`}
+                tonLabel={`实扫 ${formatTonDisplay(actualTon)} 吨`}
                 tone="primary"
               />
               <MetricCell

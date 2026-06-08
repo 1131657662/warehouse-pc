@@ -1,5 +1,7 @@
 import { Progress } from 'antd';
 
+import { formatTonDisplay } from '@/utils/modelDisplay';
+
 type Props = {
   order: API.OrderDetail;
 };
@@ -44,7 +46,10 @@ const subStyle: React.CSSProperties = {
 };
 
 const OrderKpiBar: React.FC<Props> = ({ order }) => {
-  const plannedQty = (order.summary || []).reduce((s, i) => s + (i.planned_qty || 0), 0);
+  const plannedQty = (order.summary || []).reduce(
+    (s, i) => s + (i.planned_qty || 0),
+    0,
+  );
   const plannedTons = (order.items || []).reduce(
     (s, i) => s + Number(i.estimated_ton || 0),
     0,
@@ -74,7 +79,7 @@ const OrderKpiBar: React.FC<Props> = ({ order }) => {
         <div style={cardStyle}>
           <div style={labelStyle}>累计吨位</div>
           <div style={{ ...valueStyle, color: '#0070F3' }}>
-            {scannedTons.toFixed(3)}
+            {formatTonDisplay(scannedTons)}
             <span style={unitStyle}>吨</span>
           </div>
           <span style={subStyle}>按实扫卷重累计</span>
@@ -91,7 +96,7 @@ const OrderKpiBar: React.FC<Props> = ({ order }) => {
           {scannedCount}
           <span style={unitStyle}>件</span>
         </div>
-        <span style={subStyle}>实扫 {scannedTons.toFixed(3)} 吨</span>
+        <span style={subStyle}>实扫 {formatTonDisplay(scannedTons)} 吨</span>
       </div>
 
       <div style={cardStyle}>
@@ -100,7 +105,7 @@ const OrderKpiBar: React.FC<Props> = ({ order }) => {
           {plannedQty}
           <span style={unitStyle}>件</span>
         </div>
-        <span style={subStyle}>预估 {plannedTons.toFixed(3)} 吨</span>
+        <span style={subStyle}>预估 {formatTonDisplay(plannedTons)} 吨</span>
       </div>
 
       <div style={cardStyle}>

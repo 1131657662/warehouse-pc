@@ -42,7 +42,12 @@ import {
   getInventorySummary,
   updateInventory,
 } from '@/services/inventory';
-import { formatSpecDisplay, formatWeightDisplay } from '@/utils/modelDisplay';
+import {
+  formatPieceWeightDisplay,
+  formatSpecDisplay,
+  formatTonDisplay,
+  formatWeightDisplay,
+} from '@/utils/modelDisplay';
 import { useProTableResize } from '@/utils/proTableConfig';
 import {
   buildInventoryExportQuery,
@@ -349,7 +354,7 @@ const InventoryList: React.FC = () => {
       align: 'center',
       sorter: true,
       hideInSearch: true,
-      render: (_, r) => (r.piece_weight != null ? r.piece_weight : '-'),
+      render: (_, r) => formatPieceWeightDisplay(r.piece_weight),
     },
     {
       title: '件数',

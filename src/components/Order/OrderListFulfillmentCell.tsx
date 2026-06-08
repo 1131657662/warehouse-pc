@@ -1,5 +1,5 @@
-import type { CSSProperties } from 'react';
 import { Progress, Typography } from 'antd';
+import type { CSSProperties } from 'react';
 
 const { Text } = Typography;
 
@@ -7,7 +7,9 @@ type Props = {
   record: API.OrderItem;
 };
 
-const fmtTon = (v: number) => (v > 0 ? v.toFixed(3) : '—');
+import { formatTonDisplay } from '@/utils/modelDisplay';
+
+const fmtTon = (v: number) => (v > 0 ? formatTonDisplay(v) : '—');
 
 const accentColor = '#0070F3';
 const doneColor = '#30A46C';
@@ -38,7 +40,14 @@ function RatioLine({
   color: string;
 }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 4, lineHeight: 1.25 }}>
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 4,
+        lineHeight: 1.25,
+      }}
+    >
       <Text type="secondary" style={{ fontSize: 11, width: 12, flexShrink: 0 }}>
         {unit}
       </Text>
@@ -62,7 +71,9 @@ const OrderListFulfillmentCell: React.FC<Props> = ({ record }) => {
   if (record.temp) {
     return (
       <Text style={{ fontSize: 12, lineHeight: 1.4 }}>
-        <Text strong style={{ color: accentColor }}>{actualQty}</Text>
+        <Text strong style={{ color: accentColor }}>
+          {actualQty}
+        </Text>
         <Text type="secondary"> 件 · </Text>
         <Text strong>{fmtTon(actualTon)}</Text>
         <Text type="secondary"> 吨</Text>
@@ -84,7 +95,14 @@ const OrderListFulfillmentCell: React.FC<Props> = ({ record }) => {
 
   return (
     <div style={{ width: '100%', maxWidth: 124 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          marginBottom: 3,
+        }}
+      >
         <RatioLine
           unit="件"
           actual={String(actualQty)}

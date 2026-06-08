@@ -1,4 +1,5 @@
 import * as XLSX from 'xlsx';
+import { formatTonFromPieceWeightKg } from '@/utils/modelDisplay';
 
 const STATUS_TEXT: Record<string, string> = {
   pending: '待处理',
@@ -45,7 +46,7 @@ export function exportOrderScanExcel(
     : STATUS_TEXT[order.status] || order.status;
 
   const rows: OrderExportRow[] = validLogs.map((log, idx) => {
-    const weightTon = Number(log.piece_weight || 0) / 1000;
+    const weightTon = formatTonFromPieceWeightKg(log.piece_weight);
     return {
       订单号: order.order_no,
       订单日期: order.order_date,
@@ -60,7 +61,7 @@ export function exportOrderScanExcel(
       规格: log.specification || '',
       卷号: log.matched_roll_number || log.raw_barcode,
       编号: log.code || '',
-      '单件重量(吨)': weightTon.toFixed(3),
+      '单件重量(吨)': weightTon === '-' ? '' : weightTon,
       扫码人: log.scan_user_name || '',
       扫码时间: log.created_at || '',
       匹配方式: log.is_fuzzy ? '模糊匹配' : '精确匹配',

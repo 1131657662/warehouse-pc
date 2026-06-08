@@ -29,6 +29,7 @@ import AddModelModal, {
 } from '@/components/Order/AddModelModal';
 import { formatModelLabel } from '@/components/Order/orderConstants';
 import { convertTempOrder, getOrderDetail } from '@/services/orders';
+import { formatTonDisplay } from '@/utils/modelDisplay';
 
 const { Text } = Typography;
 
@@ -168,12 +169,9 @@ const ConvertTempPage: React.FC = () => {
         if (d.key !== key) return d;
         const updated = { ...d, [field]: value };
         if (field === 'planned_qty' && updated.stock_qty > 0) {
-          updated.estimated_ton = Number(
-            (
-              (updated.stock_ton / updated.stock_qty) *
-              (updated.planned_qty as number)
-            ).toFixed(3),
-          );
+          updated.estimated_ton =
+            (updated.stock_ton / updated.stock_qty) *
+            (updated.planned_qty as number);
         }
         return updated;
       }),
@@ -210,7 +208,7 @@ const ConvertTempPage: React.FC = () => {
           <Space direction="vertical" size={0}>
             <Text>{r.stock_qty} 件</Text>
             <Text type="secondary" style={{ fontSize: 12 }}>
-              约 {r.stock_ton.toFixed(3)} 吨
+              约 {formatTonDisplay(r.stock_ton)} 吨
             </Text>
           </Space>
         ) : (
@@ -237,7 +235,7 @@ const ConvertTempPage: React.FC = () => {
       title: '预估吨位',
       dataIndex: 'estimated_ton',
       width: 96,
-      render: (v: number) => v.toFixed(3),
+      render: (v: number) => formatTonDisplay(v),
     },
     {
       title: '备注',

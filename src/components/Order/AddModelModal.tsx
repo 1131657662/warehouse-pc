@@ -23,7 +23,11 @@ import {
   getInventoryModelSummary,
   searchInventory,
 } from '@/services/inventory';
-import { formatSpecDisplay, formatWeightDisplay } from '@/utils/modelDisplay';
+import {
+  formatSpecDisplay,
+  formatTonDisplay,
+  formatWeightDisplay,
+} from '@/utils/modelDisplay';
 import { formatModelLabel } from './orderConstants';
 
 const { Text, Title } = Typography;
@@ -263,7 +267,7 @@ const AddModelModal: React.FC<Props> = ({
                         </Text>
                         <Text type="secondary" style={{ fontSize: 13 }}>
                           可用库存 {item.stock_qty} 件 ·{' '}
-                          {item.stock_ton.toFixed(3)} 吨
+                          {formatTonDisplay(item.stock_ton)} 吨
                         </Text>
                         {item.stock_qty < 20 ? (
                           <Tag color="warning">库存偏低</Tag>

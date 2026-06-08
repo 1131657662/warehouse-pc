@@ -2,7 +2,12 @@ import { ProCard } from '@ant-design/pro-components';
 import { Button, Input, Popconfirm, Space, Table, Tag, Typography } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { useMemo, useState } from 'react';
-import { formatSpecDisplay, formatWeightDisplay } from '@/utils/modelDisplay';
+import {
+  formatPieceWeightDisplay,
+  formatSpecDisplay,
+  formatTonFromPieceWeightKg,
+  formatWeightDisplay,
+} from '@/utils/modelDisplay';
 
 const { Text } = Typography;
 
@@ -105,13 +110,13 @@ const OutboundScanTable: React.FC<Props> = ({
       dataIndex: 'piece_weight',
       width: 90,
       align: 'right',
-      render: (v) => (v != null ? Number(v).toFixed(3) : '-'),
+      render: (v) => formatPieceWeightDisplay(v),
     },
     {
       title: '吨位',
       width: 80,
       align: 'right',
-      render: (_, r) => (Number(r.piece_weight || 0) / 1000).toFixed(3),
+      render: (_, r) => formatTonFromPieceWeightKg(r.piece_weight),
     },
     {
       title: '扫码人',
