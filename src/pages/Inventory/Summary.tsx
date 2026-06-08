@@ -139,11 +139,12 @@ const InventorySummaryPage: React.FC = () => {
         render: (_, r) => {
           const count = r.code_count || 0;
           const preview = r.code_preview || '';
+          const firstCode = (preview.split('、')[0] || preview).trim();
           if (count === 0) return '—';
-          if (count === 1) return preview;
+          if (count === 1) return firstCode || preview;
           return (
             <a onClick={() => openRolls(r)}>
-              {preview} 等 {count} 个
+              {firstCode || preview} 等 {count} 个
             </a>
           );
         },
