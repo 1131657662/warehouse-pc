@@ -673,6 +673,123 @@ ol {
   }
 }
 
+/* ───── 订单列表状态 Tab ───── */
+.wh-order-status-tabs {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  min-height: 36px;
+}
+
+.wh-order-status-tabs__group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+}
+
+.wh-order-status-tabs__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 6px 14px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+  cursor: pointer;
+  transition:
+    background 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.18s ease;
+  white-space: nowrap;
+}
+
+.wh-order-status-tabs__item:hover:not(.is-active) {
+  color: #334155;
+  background: rgb(255 255 255 / 55%);
+}
+
+.wh-order-status-tabs__item.is-active {
+  background: #fff;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 6%), 0 1px 3px rgb(15 23 42 / 8%);
+}
+
+.wh-order-status-tabs__item.is-pending.is-active {
+  color: var(--tab-accent, #d97706);
+}
+
+.wh-order-status-tabs__item.is-scanning.is-active {
+  color: var(--tab-accent, #0070f3);
+}
+
+.wh-order-status-tabs__item.is-completed.is-active {
+  color: var(--tab-accent, #30a46c);
+}
+
+.wh-order-status-tabs__item.is-neutral.is-active {
+  color: #1e293b;
+}
+
+.wh-order-status-tabs__count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  color: #475569;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.wh-order-status-tabs__item.is-active .wh-order-status-tabs__count {
+  background: var(--tab-accent-bg, #e2e8f0);
+  color: var(--tab-accent, #475569);
+}
+
+.wh-order-status-tabs__item.is-neutral.is-active .wh-order-status-tabs__count {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.wh-order-status-tabs__divider {
+  width: 1px;
+  height: 20px;
+  background: #e2e8f0;
+  flex-shrink: 0;
+}
+
+.wh-order-status-tabs__item--cancelled {
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 400;
+  color: #94a3b8;
+}
+
+.wh-order-status-tabs__item--cancelled:hover:not(.is-active) {
+  color: #64748b;
+  background: transparent;
+}
+
+.wh-order-status-tabs__item--cancelled.is-active {
+  background: #f8fafc;
+  box-shadow: none;
+  color: #64748b;
+  border: 1px dashed #cbd5e1;
+}
+
 /* ───── 表格行淡入关键帧 ───── */
 @keyframes wh-table-row-in {
   from { opacity: 0; transform: translateY(6px); }

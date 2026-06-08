@@ -10,22 +10,36 @@ import {
 } from '@ant-design/icons';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { ProTable } from '@ant-design/pro-components';
-import AppPageContainer from '@/components/AppPageContainer';
 import { history, useAccess } from '@umijs/max';
-import { App, Button, Dropdown, Space, Typography } from 'antd';
 import type { MenuProps } from 'antd';
+import { App, Button, Dropdown, Space, Typography } from 'antd';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import AppPageContainer from '@/components/AppPageContainer';
 import OrderListFulfillmentCell from '@/components/Order/OrderListFulfillmentCell';
+import OrderStatusTabs, {
+  type OrderStatusTab,
+} from '@/components/Order/OrderStatusTabs';
 import OrderStatusTag from '@/components/Order/OrderStatusTag';
 import { getCustomerList } from '@/services/customers';
 import { cancelOrder, getOrderList } from '@/services/orders';
-import { downloadAuthenticatedFile } from '@/utils/scanLogs';
 import { openOrderReport } from '@/utils/openOrderReport';
-import { createRowClickHandlers, useProTableResize } from '@/utils/proTableConfig';
+import {
+  createRowClickHandlers,
+  useProTableResize,
+} from '@/utils/proTableConfig';
+import { downloadAuthenticatedFile } from '@/utils/scanLogs';
 
 const { Text } = Typography;
 
 type OrderItem = API.OrderItem;
+
+const STATUS_TAB_QUERY: Record<OrderStatusTab, string[] | undefined> = {
+  pending: ['pending'],
+  scanning: ['scanning'],
+  completed: ['completed'],
+  all_active: ['pending', 'scanning', 'completed'],
+  cancelled: ['cancelled'],
+};
 
 const OrdersList: React.FC = () => {
   const actionRef = useRef<ActionType | undefined>(undefined);
@@ -34,12 +48,52 @@ const OrdersList: React.FC = () => {
   const [customers, setCustomers] = useState<API.CustomerItem[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<OrderItem | null>(null);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
+  const [statusTab, setStatusTab] = useState<OrderStatusTab>('pending');
+  const [pendingCount, setPendingCount] = useState<number | null>(null);
+  const [scanningCount, setScanningCount] = useState<number | null>(null);
+
+  const refreshActiveCounts = useCallback(async () => {
+    try {
+      const [pendingRes, scanningRes] = await Promise.all([
+        getOrderList({ current: 1, pageSize: 1, status: ['pending'] }),
+        getOrderList({ current: 1, pageSize: 1, status: ['scanning'] }),
+      ]);
+      setPendingCount(pendingRes.success ? (pendingRes.data?.total ?? 0) : 0);
+      setScanningCount(
+        scanningRes.success ? (scanningRes.data?.total ?? 0) : 0,
+      );
+    } catch {
+      setPendingCount(0);
+      setScanningCount(0);
+    }
+  }, []);
 
   useEffect(() => {
     getCustomerList().then((res) => {
       if (res.success) setCustomers(res.data?.list || []);
     });
-  }, []);
+    void refreshActiveCounts();
+  }, [refreshActiveCounts]);
+
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') {
+        void refreshActiveCounts();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [refreshActiveCounts]);
+
+  const handleStatusTabChange = useCallback(
+    (value: OrderStatusTab) => {
+      setStatusTab(value);
+      setSelectedOrder(null);
+      void refreshActiveCounts();
+      actionRef.current?.reload();
+    },
+    [refreshActiveCounts],
+  );
 
   const handleCancel = useCallback(
     async (id: number) => {
@@ -47,12 +101,13 @@ const OrdersList: React.FC = () => {
       if (res.success) {
         message.success('订单已取消');
         actionRef.current?.reload();
+        void refreshActiveCounts();
         setSelectedOrder(null);
       } else {
         message.error(res.errorMessage || '取消失败');
       }
     },
-    [message],
+    [message, refreshActiveCounts],
   );
 
   const handleDownload = async (record: OrderItem) => {
@@ -75,7 +130,9 @@ const OrdersList: React.FC = () => {
   const buildMoreMenu = useCallback(
     (record: OrderItem | null): MenuProps['items'] => {
       if (!record) {
-        return [{ key: 'empty', label: '请先点击选中一行订单', disabled: true }];
+        return [
+          { key: 'empty', label: '请先点击选中一行订单', disabled: true },
+        ];
       }
       const items: MenuProps['items'] = [];
 
@@ -227,24 +284,16 @@ const OrdersList: React.FC = () => {
         hideInSearch: true,
       },
       {
-        title: '状态',
-        dataIndex: 'status_s',
+        title: '仅临时单',
+        dataIndex: 'temp_only',
         hideInTable: true,
         valueType: 'select',
         colSize: 1,
         fieldProps: {
-          mode: 'multiple',
-          placeholder: '筛选状态',
+          placeholder: '是否临时单',
           allowClear: true,
-          style: { minWidth: 220, width: '100%' },
-          maxTagCount: 'responsive',
-          options: [
-            { label: '待处理', value: 'pending' },
-            { label: '出库中', value: 'scanning' },
-            { label: '已完成', value: 'completed' },
-            { label: '已取消', value: 'cancelled' },
-            { label: '仅临时单', value: 'temp' },
-          ],
+          style: { minWidth: 160, width: '100%' },
+          options: [{ label: '仅临时单', value: 'temp' }],
         },
       },
       {
@@ -264,7 +313,10 @@ const OrdersList: React.FC = () => {
         fixed: 'right',
         render: (_, record) => (
           <Space size={4} split={<span style={{ color: '#EAEAEA' }}>|</span>}>
-            <a key="view" onClick={() => history.push(`/orders/${record.id}/detail`)}>
+            <a
+              key="view"
+              onClick={() => history.push(`/orders/${record.id}/detail`)}
+            >
               <EyeOutlined style={{ marginRight: 2 }} />
               查看
             </a>
@@ -272,7 +324,10 @@ const OrdersList: React.FC = () => {
               key="print"
               onClick={async (e) => {
                 e.stopPropagation();
-                const result = await openOrderReport(record.id, record.order_no);
+                const result = await openOrderReport(
+                  record.id,
+                  record.order_no,
+                );
                 if (!result.ok) message.error(result.message);
               }}
             >
@@ -312,6 +367,14 @@ const OrdersList: React.FC = () => {
         cardBordered
         actionRef={actionRef}
         rowKey="id"
+        headerTitle={
+          <OrderStatusTabs
+            value={statusTab}
+            pendingCount={pendingCount}
+            scanningCount={scanningCount}
+            onChange={handleStatusTabChange}
+          />
+        }
         onRow={(record) =>
           createRowClickHandlers(
             record,
@@ -327,7 +390,9 @@ const OrdersList: React.FC = () => {
         }}
         tableAlertRender={false}
         request={async (params) => {
-          const status = params.status_s as string[] | undefined;
+          const tabStatus = STATUS_TAB_QUERY[statusTab];
+          const tempOnly = params.temp_only === 'temp';
+          const status = tempOnly ? [...(tabStatus || []), 'temp'] : tabStatus;
           const res = await getOrderList({
             current: params.current!,
             pageSize: params.pageSize!,
