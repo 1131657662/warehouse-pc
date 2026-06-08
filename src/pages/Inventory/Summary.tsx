@@ -12,6 +12,7 @@ import {
   getInventorySummary,
   refreshModelSummary,
 } from '@/services/inventory';
+import { formatSpecDisplay, formatWeightDisplay } from '@/utils/modelDisplay';
 import { useProTableResize } from '@/utils/proTableConfig';
 
 const InventorySummaryPage: React.FC = () => {
@@ -123,12 +124,14 @@ const InventorySummaryPage: React.FC = () => {
         width: 80,
         align: 'center',
         hideInSearch: true,
+        render: (_, r) => formatWeightDisplay(r.weight),
       },
       {
         title: '规格',
         dataIndex: 'specification',
         width: 120,
         hideInSearch: true,
+        render: (_, r) => formatSpecDisplay(r.specification),
       },
       {
         title: '编号',

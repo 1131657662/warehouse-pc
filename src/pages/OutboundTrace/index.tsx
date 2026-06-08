@@ -1,15 +1,16 @@
 import type { ProColumns } from '@ant-design/pro-components';
 import { ProTable } from '@ant-design/pro-components';
-import AppPageContainer from '@/components/AppPageContainer';
-import RollLifecycleDrawer from '@/components/Inventory/RollLifecycleDrawer';
 import { history } from '@umijs/max';
 import { Tag, Typography } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
+import AppPageContainer from '@/components/AppPageContainer';
+import RollLifecycleDrawer from '@/components/Inventory/RollLifecycleDrawer';
+import OrderStatusTag from '@/components/Order/OrderStatusTag';
+import { formatModelLabel } from '@/components/Order/orderConstants';
+import { MODEL_SEARCH_PLACEHOLDER } from '@/constants/modelSearch';
 import { getCustomerList } from '@/services/customers';
 import { getOutboundTrace, type OutboundTraceRow } from '@/services/outbound';
-import OrderStatusTag from '@/components/Order/OrderStatusTag';
-import { MODEL_SEARCH_PLACEHOLDER } from '@/constants/modelSearch';
-import { formatModelLabel } from '@/components/Order/orderConstants';
+import { formatSpecDisplay, formatWeightDisplay } from '@/utils/modelDisplay';
 import { useProTableResize } from '@/utils/proTableConfig';
 
 const { Text, Link } = Typography;
@@ -17,7 +18,10 @@ const { Text, Link } = Typography;
 const OutboundTracePage: React.FC = () => {
   const [customers, setCustomers] = useState<API.CustomerItem[]>([]);
   const [lifecycleOpen, setLifecycleOpen] = useState(false);
-  const [lifecycleRoll, setLifecycleRoll] = useState<{ id?: number; rollNumber?: string }>({});
+  const [lifecycleRoll, setLifecycleRoll] = useState<{
+    id?: number;
+    rollNumber?: string;
+  }>({});
 
   useEffect(() => {
     getCustomerList().then((res) => {
@@ -36,7 +40,10 @@ const OutboundTracePage: React.FC = () => {
         render: (_, r) => (
           <Link
             onClick={() => {
-              setLifecycleRoll({ id: r.inventory_id, rollNumber: r.roll_number });
+              setLifecycleRoll({
+                id: r.inventory_id,
+                rollNumber: r.roll_number,
+              });
               setLifecycleOpen(true);
             }}
           >
@@ -80,7 +87,7 @@ const OutboundTracePage: React.FC = () => {
         dataIndex: 'weight',
         width: 80,
         hideInSearch: true,
-        render: (_, r) => (r.weight != null ? Number(r.weight).toFixed(3) : '-'),
+        render: (_, r) => formatWeightDisplay(r.weight),
       },
       {
         title: '规格',
@@ -88,13 +95,15 @@ const OutboundTracePage: React.FC = () => {
         width: 110,
         hideInSearch: true,
         ellipsis: true,
+        render: (_, r) => formatSpecDisplay(r.specification),
       },
       {
         title: '件重(kg)',
         dataIndex: 'piece_weight',
         width: 90,
         hideInSearch: true,
-        render: (_, r) => (r.piece_weight != null ? Number(r.piece_weight).toFixed(3) : '-'),
+        render: (_, r) =>
+          r.piece_weight != null ? Number(r.piece_weight).toFixed(3) : '-',
       },
       {
         title: '出库时间',
@@ -217,8 +226,12 @@ const OutboundTracePage: React.FC = () => {
             model_keyword: params.model_keyword as string | undefined,
             roll_number: params.roll_number,
             order_no: params.order_no,
-            order_dateRange: params.order_dateRange as [string, string] | undefined,
-            scan_dateRange: params.scan_dateRange as [string, string] | undefined,
+            order_dateRange: params.order_dateRange as
+              | [string, string]
+              | undefined,
+            scan_dateRange: params.scan_dateRange as
+              | [string, string]
+              | undefined,
             include_revoked: params.include_revoked as boolean | undefined,
           });
           return {

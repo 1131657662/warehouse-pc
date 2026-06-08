@@ -30,7 +30,6 @@ import {
   Typography,
 } from 'antd';
 import { useEffect, useRef, useState } from 'react';
-import AppPageContainer from '@/components/AppPageContainer';
 import RollLifecycleDrawer from '@/components/Inventory/RollLifecycleDrawer';
 import { MODEL_SEARCH_PLACEHOLDER } from '@/constants/modelSearch';
 import { getCustomerList } from '@/services/customers';
@@ -42,6 +41,7 @@ import {
   getInventorySummary,
   updateInventory,
 } from '@/services/inventory';
+import { formatSpecDisplay, formatWeightDisplay } from '@/utils/modelDisplay';
 import { useProTableResize } from '@/utils/proTableConfig';
 import {
   buildInventoryExportQuery,
@@ -305,7 +305,7 @@ const InventoryList: React.FC = () => {
       align: 'center',
       sorter: true,
       hideInSearch: true,
-      render: (_, r) => (r.weight != null ? r.weight : '-'),
+      render: (_, r) => formatWeightDisplay(r.weight),
     },
     {
       title: '规格',
@@ -314,6 +314,7 @@ const InventoryList: React.FC = () => {
       ellipsis: true,
       sorter: true,
       hideInSearch: true,
+      render: (_, r) => formatSpecDisplay(r.specification),
     },
     {
       title: '卷号',

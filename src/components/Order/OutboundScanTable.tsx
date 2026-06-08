@@ -2,6 +2,7 @@ import { ProCard } from '@ant-design/pro-components';
 import { Button, Input, Popconfirm, Space, Table, Tag, Typography } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { useMemo, useState } from 'react';
+import { formatSpecDisplay, formatWeightDisplay } from '@/utils/modelDisplay';
 
 const { Text } = Typography;
 
@@ -79,12 +80,13 @@ const OutboundScanTable: React.FC<Props> = ({
       dataIndex: 'weight',
       width: 80,
       align: 'right',
-      render: (v) => (v != null ? Number(v).toFixed(3) : '-'),
+      render: (v) => formatWeightDisplay(v),
     },
     {
       title: '规格',
       dataIndex: 'specification',
       width: 110,
+      render: (v) => formatSpecDisplay(v),
     },
     {
       title: '卷号',

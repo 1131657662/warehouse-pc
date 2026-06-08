@@ -19,7 +19,11 @@ import {
 } from 'antd';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { MODEL_SEARCH_PLACEHOLDER } from '@/constants/modelSearch';
-import { getInventoryModelSummary, searchInventory } from '@/services/inventory';
+import {
+  getInventoryModelSummary,
+  searchInventory,
+} from '@/services/inventory';
+import { formatSpecDisplay, formatWeightDisplay } from '@/utils/modelDisplay';
 import { formatModelLabel } from './orderConstants';
 
 const { Text, Title } = Typography;
@@ -32,7 +36,9 @@ export type InventoryModelOption = {
   stock_ton: number;
 };
 
-export function modelKey(item: Pick<InventoryModelOption, 'product_name' | 'weight' | 'specification'>) {
+export function modelKey(
+  item: Pick<InventoryModelOption, 'product_name' | 'weight' | 'specification'>,
+) {
   return `${item.product_name}|${item.weight}|${item.specification}`;
 }
 
@@ -166,7 +172,13 @@ const AddModelModal: React.FC<Props> = ({
       destroyOnHidden
       afterClose={resetOnClose}
       footer={
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
           <Text type="secondary">
             客户：<Text strong>{customerName || '未选择'}</Text>
             <span style={{ marginLeft: 16 }}>
@@ -175,7 +187,11 @@ const AddModelModal: React.FC<Props> = ({
           </Text>
           <Space>
             <Button onClick={onCancel}>取消</Button>
-            <Button type="primary" disabled={cart.length === 0} onClick={handleConfirm}>
+            <Button
+              type="primary"
+              disabled={cart.length === 0}
+              onClick={handleConfirm}
+            >
               确定加入出库明细（{cart.length}）
             </Button>
           </Space>
@@ -197,7 +213,10 @@ const AddModelModal: React.FC<Props> = ({
         style={{ marginBottom: 16 }}
       />
       {preloading ? (
-        <Text type="secondary" style={{ display: 'block', marginBottom: 12, fontSize: 13 }}>
+        <Text
+          type="secondary"
+          style={{ display: 'block', marginBottom: 12, fontSize: 13 }}
+        >
           正在加载该客户型号汇总…
         </Text>
       ) : null}
@@ -243,9 +262,12 @@ const AddModelModal: React.FC<Props> = ({
                           )}
                         </Text>
                         <Text type="secondary" style={{ fontSize: 13 }}>
-                          可用库存 {item.stock_qty} 件 · {item.stock_ton.toFixed(3)} 吨
+                          可用库存 {item.stock_qty} 件 ·{' '}
+                          {item.stock_ton.toFixed(3)} 吨
                         </Text>
-                        {item.stock_qty < 20 ? <Tag color="warning">库存偏低</Tag> : null}
+                        {item.stock_qty < 20 ? (
+                          <Tag color="warning">库存偏低</Tag>
+                        ) : null}
                         <Button
                           type={inCart ? 'default' : 'primary'}
                           icon={<PlusOutlined />}
@@ -253,7 +275,11 @@ const AddModelModal: React.FC<Props> = ({
                           disabled={disabled}
                           onClick={() => addToCart(item)}
                         >
-                          {inDetail ? '已在明细' : inCart ? '已加入' : '加入待选'}
+                          {inDetail
+                            ? '已在明细'
+                            : inCart
+                              ? '已加入'
+                              : '加入待选'}
                         </Button>
                       </div>
                     </Col>
@@ -264,7 +290,11 @@ const AddModelModal: React.FC<Props> = ({
           ) : (
             <Empty
               style={{ marginTop: 48 }}
-              description={searchText ? '未找到型号，请调整关键词' : '搜索后将显示可添加的型号'}
+              description={
+                searchText
+                  ? '未找到型号，请调整关键词'
+                  : '搜索后将显示可添加的型号'
+              }
               image={Empty.PRESENTED_IMAGE_SIMPLE}
             />
           )}
@@ -310,7 +340,8 @@ const AddModelModal: React.FC<Props> = ({
                           </Text>
                           <div>
                             <Text type="secondary" style={{ fontSize: 12 }}>
-                              {item.weight != null ? `${item.weight}` : '-'} / {item.specification}
+                              {formatWeightDisplay(item.weight)} /{' '}
+                              {formatSpecDisplay(item.specification)}
                             </Text>
                           </div>
                           <Text type="secondary" style={{ fontSize: 12 }}>

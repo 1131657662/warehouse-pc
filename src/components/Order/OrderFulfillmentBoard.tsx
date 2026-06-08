@@ -1,6 +1,7 @@
 import { ProCard } from '@ant-design/pro-components';
 import { Space, Table, Tag, Typography } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
+import { formatSpecDisplay, formatWeightDisplay } from '@/utils/modelDisplay';
 
 const { Text } = Typography;
 
@@ -92,8 +93,8 @@ const OrderFulfillmentBoard: React.FC<Props> = ({ order }) => {
           </Space>
           <br />
           <Text type="secondary" style={{ fontSize: 12 }}>
-            克重 {r.weight != null ? Number(r.weight).toFixed(3) : '—'} · 规格{' '}
-            {r.specification || '—'}
+            克重 {formatWeightDisplay(r.weight)} · 规格{' '}
+            {formatSpecDisplay(r.specification)}
           </Text>
         </div>
       ),

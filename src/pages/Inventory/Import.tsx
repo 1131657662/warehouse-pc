@@ -25,6 +25,7 @@ import {
   IMPORT_FIELD_ALIASES,
   pickImportField,
 } from '@/utils/inventoryImportParse';
+import { formatSpecDisplay, formatWeightDisplay } from '@/utils/modelDisplay';
 import { downloadAuthenticatedFile } from '@/utils/scanLogs';
 
 const { Dragger } = Upload;
@@ -487,9 +488,14 @@ const ImportPage: React.FC = () => {
       title: '克重',
       dataIndex: 'weight',
       width: 80,
-      render: (v: number | null) => v ?? '-',
+      render: (v: number | null) => formatWeightDisplay(v),
     },
-    { title: '规格', dataIndex: 'specification', width: 100 },
+    {
+      title: '规格',
+      dataIndex: 'specification',
+      width: 100,
+      render: (v: string) => formatSpecDisplay(v),
+    },
     { title: '卷号', dataIndex: 'roll_number', width: 130 },
     {
       title: '编号',
