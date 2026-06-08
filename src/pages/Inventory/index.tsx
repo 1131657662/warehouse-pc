@@ -30,6 +30,7 @@ import {
   Typography,
 } from 'antd';
 import { useEffect, useRef, useState } from 'react';
+import AppPageContainer from '@/components/AppPageContainer';
 import RollLifecycleDrawer from '@/components/Inventory/RollLifecycleDrawer';
 import { MODEL_SEARCH_PLACEHOLDER } from '@/constants/modelSearch';
 import { getCustomerList } from '@/services/customers';
