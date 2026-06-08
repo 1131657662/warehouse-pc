@@ -132,11 +132,21 @@ const InventorySummaryPage: React.FC = () => {
       },
       {
         title: '编号',
-        dataIndex: 'stock_codes',
+        dataIndex: 'code_count',
         width: 120,
         ellipsis: true,
         hideInSearch: true,
-        render: (_, r) => r.stock_codes || '—',
+        render: (_, r) => {
+          const count = r.code_count || 0;
+          const preview = r.code_preview || '';
+          if (count === 0) return '—';
+          if (count === 1) return preview;
+          return (
+            <a onClick={() => openRolls(r)}>
+              {preview} 等 {count} 个
+            </a>
+          );
+        },
       },
       {
         title: '件数',

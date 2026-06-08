@@ -79,6 +79,8 @@ declare namespace API {
     total_reserved: number;
     total_ton: number;
     stock_codes?: string;
+    code_count?: number;
+    code_preview?: string;
   };
 
   type RollLifecycleOutbound = {
