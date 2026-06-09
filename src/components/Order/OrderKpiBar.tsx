@@ -1,6 +1,9 @@
 import { Progress } from 'antd';
 
-import { formatTonDisplay } from '@/utils/modelDisplay';
+import {
+  formatTonDisplay,
+  formatTonDisplayRounded,
+} from '@/utils/modelDisplay';
 
 type Props = {
   order: API.OrderDetail;
@@ -105,7 +108,9 @@ const OrderKpiBar: React.FC<Props> = ({ order }) => {
           {plannedQty}
           <span style={unitStyle}>件</span>
         </div>
-        <span style={subStyle}>预估 {formatTonDisplay(plannedTons)} 吨</span>
+        <span style={subStyle}>
+          预估 {formatTonDisplayRounded(plannedTons, 4)} 吨
+        </span>
       </div>
 
       <div style={cardStyle}>

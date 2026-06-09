@@ -7,9 +7,14 @@ type Props = {
   record: API.OrderItem;
 };
 
-import { formatTonDisplay } from '@/utils/modelDisplay';
+import {
+  formatTonDisplay,
+  formatTonDisplayRounded,
+} from '@/utils/modelDisplay';
 
-const fmtTon = (v: number) => (v > 0 ? formatTonDisplay(v) : '—');
+const fmtActualTon = (v: number) => (v > 0 ? formatTonDisplay(v) : '—');
+const fmtPlannedTon = (v: number) =>
+  v > 0 ? formatTonDisplayRounded(v, 4) : '—';
 
 const accentColor = '#0070F3';
 const doneColor = '#30A46C';
@@ -75,7 +80,7 @@ const OrderListFulfillmentCell: React.FC<Props> = ({ record }) => {
           {actualQty}
         </Text>
         <Text type="secondary"> 件 · </Text>
-        <Text strong>{fmtTon(actualTon)}</Text>
+        <Text strong>{fmtActualTon(actualTon)}</Text>
         <Text type="secondary"> 吨</Text>
       </Text>
     );
@@ -124,8 +129,8 @@ const OrderListFulfillmentCell: React.FC<Props> = ({ record }) => {
       />
       <RatioLine
         unit="吨"
-        actual={fmtTon(actualTon)}
-        plan={hasPlan && plannedTon > 0 ? fmtTon(plannedTon) : '—'}
+        actual={fmtActualTon(actualTon)}
+        plan={hasPlan && plannedTon > 0 ? fmtPlannedTon(plannedTon) : '—'}
         showPlan={hasPlan && plannedTon > 0}
         color={mainColor}
       />

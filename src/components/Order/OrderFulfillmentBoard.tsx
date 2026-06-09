@@ -4,6 +4,7 @@ import type { ColumnsType } from 'antd/es/table';
 import {
   formatSpecDisplay,
   formatTonDisplay,
+  formatTonDisplayRounded,
   formatWeightDisplay,
 } from '@/utils/modelDisplay';
 
@@ -133,7 +134,7 @@ const OrderFulfillmentBoard: React.FC<Props> = ({ order }) => {
             <Text type="secondary">
               {order.temp || r.is_unplanned
                 ? '—'
-                : formatTonDisplay(r.estimated_ton)}
+                : formatTonDisplayRounded(r.estimated_ton, 4)}
             </Text>
           ),
         },
@@ -228,7 +229,7 @@ const OrderFulfillmentBoard: React.FC<Props> = ({ order }) => {
               <MetricCell
                 label="计划出库"
                 qty={String(plannedQty)}
-                tonLabel={`预估 ${formatTonDisplay(plannedTon)} 吨`}
+                tonLabel={`预估 ${formatTonDisplayRounded(plannedTon, 4)} 吨`}
               />
               <MetricCell
                 label="实际出库"
