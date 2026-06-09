@@ -85,6 +85,21 @@ export default [
         name: '批量导入',
         title: '批量导入',
         component: './Inventory/Import',
+        access: 'isAdmin',
+      },
+      {
+        path: '/inventory/batch-update',
+        name: '批量更新',
+        title: '批量更新',
+        component: './Inventory/BatchUpdate',
+        access: 'isAdmin',
+      },
+      {
+        path: '/inventory/batch-change-customer',
+        name: '批量改客户',
+        title: '批量改客户',
+        component: './Inventory/BatchChangeCustomer',
+        access: 'isAdmin',
       },
       {
         path: '/inventory/summary',

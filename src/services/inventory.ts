@@ -62,6 +62,67 @@ export async function batchDeleteInventory(body: {
   }>('/api/inventory/batch-delete', { method: 'POST', data: body });
 }
 
+/** 批量改客户 POST /api/inventory/batch-change-customer */
+export async function batchChangeInventoryCustomer(
+  rows: {
+    row?: number;
+    status?: string;
+    customer_id: number;
+    new_customer_id: number;
+    roll_number: string;
+  }[],
+  options?: { skipErrorHandler?: boolean; timeout?: number },
+) {
+  return request<{
+    success: boolean;
+    errorMessage?: string;
+    data: {
+      successCount: number;
+      failCount: number;
+      failRows: { row: number; roll_number?: string; message?: string }[];
+    };
+  }>('/api/inventory/batch-change-customer', {
+    method: 'POST',
+    data: { rows },
+    skipErrorHandler: options?.skipErrorHandler,
+    timeout: options?.timeout ?? 120000,
+  });
+}
+
+/** 批量更新库存 POST /api/inventory/batch-update */
+export async function batchUpdateInventory(
+  rows: {
+    row?: number;
+    status?: string;
+    customer_id: number;
+    product_name: string;
+    weight: number | null;
+    piece_weight: number | null;
+    specification: string;
+    roll_number: string;
+    code: string;
+    quantity: number;
+    damaged: string;
+    remark: string;
+  }[],
+  options?: { skipErrorHandler?: boolean; timeout?: number },
+) {
+  return request<{
+    success: boolean;
+    errorMessage?: string;
+    data: {
+      successCount: number;
+      failCount: number;
+      failRows: { row: number; roll_number?: string; message?: string }[];
+    };
+  }>('/api/inventory/batch-update', {
+    method: 'POST',
+    data: { rows },
+    skipErrorHandler: options?.skipErrorHandler,
+    timeout: options?.timeout ?? 120000,
+  });
+}
+
 /** 批量导入 POST /api/inventory/import */
 export async function importInventory(
   rows: {

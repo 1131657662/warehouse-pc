@@ -69,3 +69,15 @@ export const IMPORT_FIELD_ALIASES = {
   damaged: ['破损', 'damaged', 'Damaged'],
   remark: ['备注', 'remark', 'Remark'],
 } as const;
+
+/** 批量改客户模板字段别名 */
+export const BATCH_CHANGE_CUSTOMER_ALIASES = {
+  original_customer_code: [
+    '原客户编码',
+    '原客户代码',
+    '原始客户编码',
+    'original_customer_code',
+  ],
+  new_customer_code: ['新客户编码', '新客户代码', 'new_customer_code'],
+  roll_number: IMPORT_FIELD_ALIASES.roll_number,
+} as const;

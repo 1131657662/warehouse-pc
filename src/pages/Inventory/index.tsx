@@ -4,6 +4,7 @@ import {
   ExportOutlined,
   ImportOutlined,
   PlusOutlined,
+  SwapOutlined,
 } from '@ant-design/icons';
 import type {
   ActionType,
@@ -526,6 +527,24 @@ const InventoryList: React.FC = () => {
               onClick={() => history.push('/inventory/import')}
             >
               批量导入
+            </Button>
+          ) : null,
+          canManageInventory ? (
+            <Button
+              key="batchUpdate"
+              icon={<EditOutlined />}
+              onClick={() => history.push('/inventory/batch-update')}
+            >
+              批量更新
+            </Button>
+          ) : null,
+          canManageInventory ? (
+            <Button
+              key="batchChangeCustomer"
+              icon={<SwapOutlined />}
+              onClick={() => history.push('/inventory/batch-change-customer')}
+            >
+              批量改客户
             </Button>
           ) : null,
           canManageInventory ? (

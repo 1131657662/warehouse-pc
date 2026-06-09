@@ -10,6 +10,8 @@ export default {
   'menu.库存管理': 'Inventory',
   'menu.库存管理.库存列表': 'Inventory List',
   'menu.库存管理.批量导入': 'Batch Import',
+  'menu.库存管理.批量更新': 'Batch Update',
+  'menu.库存管理.批量改客户': 'Change Customer',
   'menu.库存管理.型号汇总': 'Model Summary',
   'menu.库存管理.出库追溯': 'Outbound Trace',
   'menu.客户管理': 'Customers',
