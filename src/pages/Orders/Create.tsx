@@ -39,7 +39,12 @@ import {
   buildModelCodeLabelMap,
   mergeSummaryStockCodes,
 } from '@/utils/inventoryModelCodes';
-import { formatTonDisplay } from '@/utils/modelDisplay';
+import {
+  addDecimal,
+  computeEstimatedTon,
+  formatTonDisplay,
+  formatTonDisplayRounded,
+} from '@/utils/modelDisplay';
 
 const { Text } = Typography;
 
@@ -122,7 +127,10 @@ const CreateOrderPage: React.FC = () => {
   const customerName = customers.find((c) => c.id === customerId)?.name;
 
   const totalPlanned = details.reduce((sum, d) => sum + d.planned_qty, 0);
-  const totalTon = details.reduce((sum, d) => sum + d.estimated_ton, 0);
+  const totalTonLabel = formatTonDisplayRounded(
+    addDecimal(...details.map((d) => d.estimated_ton)),
+    4,
+  );
 
   useEffect(() => {
     document.title = `${isEdit ? '编辑订单' : isCopy ? '复制建单' : '创建订单'} - 茂智物流`;
@@ -211,10 +219,11 @@ const CreateOrderPage: React.FC = () => {
                 ...r,
                 stock_qty: stockQty,
                 stock_ton: stockTon,
-                estimated_ton:
-                  stockQty > 0
-                    ? (stockTon / stockQty) * r.planned_qty
-                    : r.estimated_ton,
+                estimated_ton: computeEstimatedTon(
+                  stockTon,
+                  stockQty,
+                  r.planned_qty,
+                ),
               };
             });
           }
@@ -324,11 +333,11 @@ const CreateOrderPage: React.FC = () => {
         if (d.key !== key) return d;
         const updated = { ...d, [field]: value };
         if (field === 'planned_qty') {
-          updated.estimated_ton =
-            updated.stock_qty > 0
-              ? (updated.stock_ton / updated.stock_qty) *
-                (updated.planned_qty as number)
-              : 0;
+          updated.estimated_ton = computeEstimatedTon(
+            updated.stock_ton,
+            updated.stock_qty,
+            updated.planned_qty as number,
+          );
         }
         return updated;
       }),
@@ -382,7 +391,7 @@ const CreateOrderPage: React.FC = () => {
       title: '预估吨位',
       dataIndex: 'estimated_ton',
       width: 96,
-      render: (v: number) => formatTonDisplay(v),
+      render: (v: number) => formatTonDisplayRounded(v, 4),
     },
     {
       title: '备注',
@@ -589,7 +598,7 @@ const CreateOrderPage: React.FC = () => {
               <div style={{ marginTop: 16, textAlign: 'right' }}>
                 <Text type="secondary">
                   合计预发 <Text strong>{totalPlanned}</Text> 件 · 预估{' '}
-                  <Text strong>{formatTonDisplay(totalTon)}</Text> 吨
+                  <Text strong>{totalTonLabel}</Text> 吨
                 </Text>
               </div>
             </>

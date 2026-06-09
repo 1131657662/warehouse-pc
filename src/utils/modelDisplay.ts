@@ -142,11 +142,86 @@ export function sumTonFromPieceWeightsKg(
   );
 }
 
+function toScaledBigInt(value: string, targetScale: number) {
+  const s = normalizeDecimalInput(value);
+  const neg = s.startsWith('-');
+  const abs = neg ? s.slice(1) : s;
+  const [intPart, fracPart = ''] = abs.split('.');
+  const fracPadded = (fracPart + '0'.repeat(targetScale)).slice(0, targetScale);
+  const bi = BigInt(intPart + fracPadded);
+  return { neg, bi };
+}
+
+/** 四舍五入到 maxDecimals 位小数（字符串） */
+export function roundDecimalHalfUp(
+  value: number | string | null | undefined,
+  maxDecimals: number,
+): string {
+  const scale = maxDecimals;
+  const s = normalizeDecimalInput(value);
+  const neg = s.startsWith('-');
+  const abs = neg ? s.slice(1) : s;
+  const [intPart, fracPart = ''] = abs.split('.');
+  const padded = (fracPart + '0'.repeat(scale + 1)).slice(0, scale + 1);
+  const roundDigit = Number(padded[scale] || '0');
+  const keep = padded.slice(0, scale);
+  let bi = BigInt((intPart || '0') + keep.padEnd(scale, '0'));
+  if (roundDigit >= 5) bi += 1n;
+  return fromScaledBigInt(neg, bi, scale);
+}
+
+function divideDecimal(
+  a: number | string | null | undefined,
+  b: number | string | null | undefined,
+): string {
+  const scale = 12;
+  const pa = toScaledBigInt(normalizeDecimalInput(a), scale);
+  const pb = toScaledBigInt(normalizeDecimalInput(b), scale);
+  if (pb.bi === 0n) return '0';
+  const neg = pa.neg !== pb.neg;
+  const bi = (pa.bi * 10n ** BigInt(scale)) / pb.bi;
+  return fromScaledBigInt(neg, bi, scale);
+}
+
+function multiplyDecimal(
+  a: number | string | null | undefined,
+  b: number | string | null | undefined,
+): string {
+  const scale = 12;
+  const pa = toScaledBigInt(normalizeDecimalInput(a), scale);
+  const pb = toScaledBigInt(normalizeDecimalInput(b), scale);
+  const neg = pa.neg !== pb.neg;
+  const bi = (pa.bi * pb.bi) / 10n ** BigInt(scale);
+  return fromScaledBigInt(neg, bi, scale);
+}
+
 /** 吨位展示：去尾零，不带单位（调用方加「吨」） */
 export function formatTonDisplay(
   ton: number | string | null | undefined,
 ): string {
   return stripDecimalZeros(ton);
+}
+
+/** 吨位：四舍五入至 maxDecimals 位后再去尾零（建单预估等） */
+export function formatTonDisplayRounded(
+  ton: number | string | null | undefined,
+  maxDecimals = 4,
+): string {
+  return stripDecimalZeros(roundDecimalHalfUp(ton, maxDecimals));
+}
+
+/** 按库存吨位/件数 × 计划件数，预估吨位（四舍五入 4 位） */
+export function computeEstimatedTon(
+  stockTon: number | string | null | undefined,
+  stockQty: number,
+  plannedQty: number,
+): number {
+  if (!stockQty || stockQty <= 0 || !plannedQty || plannedQty <= 0) return 0;
+  const product = multiplyDecimal(
+    divideDecimal(stockTon, stockQty),
+    plannedQty,
+  );
+  return Number(formatTonDisplayRounded(product, 4));
 }
 
 const COMPOSITE_SPEC = /[*×xX]/;
