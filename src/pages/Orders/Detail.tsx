@@ -10,11 +10,11 @@ import {
   SwapOutlined,
 } from '@ant-design/icons';
 import { ProCard } from '@ant-design/pro-components';
-import AppPageContainer from '@/components/AppPageContainer';
 import { history, useAccess, useParams } from '@umijs/max';
+import type { MenuProps } from 'antd';
 import {
-  App,
   Alert,
+  App,
   Button,
   Collapse,
   Descriptions,
@@ -26,26 +26,31 @@ import {
   Typography,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import type { MenuProps } from 'antd';
 import { useCallback, useEffect, useState } from 'react';
-import { useOrderWebSocket } from '@/hooks/useOrderWebSocket';
-import { openOrderReport } from '@/utils/openOrderReport';
+import AppPageContainer from '@/components/AppPageContainer';
 import OrderFulfillmentBoard from '@/components/Order/OrderFulfillmentBoard';
 import OrderStatusTag from '@/components/Order/OrderStatusTag';
 import OutboundScanTable from '@/components/Order/OutboundScanTable';
 import RollPickerDrawer from '@/components/Order/RollPickerDrawer';
+import { useOrderWebSocket } from '@/hooks/useOrderWebSocket';
 import {
   cancelOrder,
   getOrderDetail,
   rollbackOrder,
   submitOrder,
 } from '@/services/orders';
-import { scanRemove, scanBulkRemove } from '@/services/scan';
-import { downloadAuthenticatedFile, fetchAllScanLogs, buildInventoryExportQuery } from '@/utils/scanLogs';
+import { scanBulkRemove, scanRemove } from '@/services/scan';
+import { showCountdownConfirm } from '@/utils/countdownConfirm';
+import { openOrderReport } from '@/utils/openOrderReport';
 import {
   getSubmitConfirmContent,
   getSubmitConfirmTitle,
 } from '@/utils/orderSubmitConfirm';
+import {
+  buildInventoryExportQuery,
+  downloadAuthenticatedFile,
+  fetchAllScanLogs,
+} from '@/utils/scanLogs';
 
 const { Paragraph, Text } = Typography;
 
@@ -112,8 +117,7 @@ const OrdersDetail: React.FC = () => {
     };
   }, [orderId]);
 
-  const wsEnabled =
-    order?.status === 'pending' || order?.status === 'scanning';
+  const wsEnabled = order?.status === 'pending' || order?.status === 'scanning';
 
   useOrderWebSocket(orderId, silentRefresh, wsEnabled);
 
@@ -272,9 +276,12 @@ const OrdersDetail: React.FC = () => {
           key: 'rollback',
           label: '回退到出库中',
           onClick: () => {
-            Modal.confirm({
+            showCountdownConfirm({
+              confirm: modal.confirm,
               title: '确认回退？',
-              content: '订单将退回「出库中」，已扫记录保持有效，可继续增减后再次提交（不会恢复库存、不会作废扫码）',
+              content:
+                '订单将退回「出库中」，已扫记录保持有效，可继续增减后再次提交（不会恢复库存、不会作废扫码）',
+              okText: '确认回退',
               onOk: handleRollback,
             });
           },
@@ -287,7 +294,8 @@ const OrdersDetail: React.FC = () => {
           label: '取消订单',
           danger: true,
           onClick: () => {
-            modal.confirm({
+            showCountdownConfirm({
+              confirm: modal.confirm,
               title: '确认取消该订单？',
               content: `订单号：${order?.order_no || ''}`,
               okText: '确认取消',
@@ -310,7 +318,8 @@ const OrdersDetail: React.FC = () => {
     {
       title: '状态',
       width: 80,
-      render: (_, r) => (r.revoked ? <Tag>已作废</Tag> : <Tag color="blue">有效</Tag>),
+      render: (_, r) =>
+        r.revoked ? <Tag>已作废</Tag> : <Tag color="blue">有效</Tag>,
     },
     { title: '卷号', dataIndex: 'matched_roll_number', width: 120 },
     { title: '原始条码', dataIndex: 'raw_barcode', width: 120 },
@@ -331,7 +340,11 @@ const OrdersDetail: React.FC = () => {
           >
             刷新
           </Button>
-          <Button icon={<DownloadOutlined />} loading={exporting} onClick={handleDownload}>
+          <Button
+            icon={<DownloadOutlined />}
+            loading={exporting}
+            onClick={handleDownload}
+          >
             下载明细
           </Button>
           {canConvertTemp ? (
@@ -374,7 +387,9 @@ const OrdersDetail: React.FC = () => {
                 <Button
                   type="primary"
                   size="small"
-                  onClick={() => history.push(`/orders/${orderId}/convert-temp`)}
+                  onClick={() =>
+                    history.push(`/orders/${orderId}/convert-temp`)
+                  }
                 >
                   去转正
                 </Button>
@@ -383,17 +398,32 @@ const OrdersDetail: React.FC = () => {
           ) : null}
           <ProCard bordered style={{ marginBottom: 16 }}>
             <Descriptions column={{ xs: 1, sm: 2, md: 3 }} size="small">
-              <Descriptions.Item label="订单号">{order.order_no}</Descriptions.Item>
+              <Descriptions.Item label="订单号">
+                {order.order_no}
+              </Descriptions.Item>
               <Descriptions.Item label="状态">
                 <OrderStatusTag status={order.status} temp={order.temp} />
               </Descriptions.Item>
-              <Descriptions.Item label="客户">{order.customer_name}</Descriptions.Item>
-              <Descriptions.Item label="车号">{order.vehicle_no || '—'}</Descriptions.Item>
-              <Descriptions.Item label="箱号">{order.container_no || '—'}</Descriptions.Item>
-              <Descriptions.Item label="下单日期">{order.order_date}</Descriptions.Item>
-              <Descriptions.Item label="完成时间" span={3}>{order.completed_at || '—'}</Descriptions.Item>
+              <Descriptions.Item label="客户">
+                {order.customer_name}
+              </Descriptions.Item>
+              <Descriptions.Item label="车号">
+                {order.vehicle_no || '—'}
+              </Descriptions.Item>
+              <Descriptions.Item label="箱号">
+                {order.container_no || '—'}
+              </Descriptions.Item>
+              <Descriptions.Item label="下单日期">
+                {order.order_date}
+              </Descriptions.Item>
+              <Descriptions.Item label="完成时间" span={3}>
+                {order.completed_at || '—'}
+              </Descriptions.Item>
               <Descriptions.Item label="备注" span={3}>
-                <Paragraph style={{ margin: 0 }} ellipsis={{ rows: 2, expandable: true }}>
+                <Paragraph
+                  style={{ margin: 0 }}
+                  ellipsis={{ rows: 2, expandable: true }}
+                >
                   {order.remark || '—'}
                 </Paragraph>
               </Descriptions.Item>
@@ -411,7 +441,11 @@ const OrdersDetail: React.FC = () => {
             onRevokeUnplanned={canOperate ? handleRevokeUnplanned : undefined}
             extra={
               canOperate ? (
-                <Button type="primary" size="small" onClick={() => setPickerOpen(true)}>
+                <Button
+                  type="primary"
+                  size="small"
+                  onClick={() => setPickerOpen(true)}
+                >
                   继续出库
                 </Button>
               ) : null

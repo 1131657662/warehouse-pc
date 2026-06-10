@@ -9,6 +9,7 @@ import {
   App,
   Button,
   Modal,
+  Progress,
   Space,
   Table,
   Tag,
@@ -79,6 +80,7 @@ const ImportPage: React.FC = () => {
   const [rows, setRows] = useState<ParsedRow[]>([]);
   const [importing, setImporting] = useState(false);
   const [importProgress, setImportProgress] = useState('');
+  const [importPercent, setImportPercent] = useState(0);
 
   // 客户列表（用于校验客户编码+名称是否存在 + ID 映射）
   const [customerCodeMap, setCustomerCodeMap] = useState<
@@ -155,7 +157,7 @@ const ImportPage: React.FC = () => {
   // 校验单行
   const validateRow = (
     index: number,
-    row: Record<string, string>,
+    row: Record<string, unknown>,
     seenRollNumbers: Map<string, number>,
     codeMap: Map<string, { id: number; name: string }>,
     nameMap: Map<string, { id: number; code: string }>,
@@ -262,15 +264,39 @@ const ImportPage: React.FC = () => {
       }
     }
 
-    // ⚠️ 克重为空（警告但可导入）
+    // ⚠️ 合理性警告（汇总所有警告，不阻止导入）
+    const warnings: string[] = [];
     const weight = weightStr ? parseFloat(weightStr) : null;
+
     if (!weightStr) {
+      warnings.push('缺克重');
+    } else if (
+      weight != null &&
+      Number.isFinite(weight) &&
+      (weight < 10 || weight > 1000)
+    ) {
+      warnings.push(`克重异常（${weight}g），正常范围 10~1000g`);
+    }
+
+    if (pieceWeightStr) {
+      const pw = parseFloat(pieceWeightStr);
+      if (!Number.isFinite(pw)) warnings.push('件重格式无效');
+    } else {
+      warnings.push('缺少件重');
+    }
+
+    const qty = parseInt(qtyStr, 10);
+    if (qty > 100) {
+      warnings.push(`件数异常偏大（${qty}），确认是件数而非重量？`);
+    }
+
+    if (warnings.length > 0) {
       return {
         ...base,
         customer_name: customerName,
+        weight,
         status: 'warning' as const,
-        message: '缺克重（可导入）',
-        weight: null,
+        message: warnings.join('；'),
       };
     }
 
@@ -342,6 +368,7 @@ const ImportPage: React.FC = () => {
 
     setImporting(true);
     setImportProgress('');
+    setImportPercent(0);
     try {
       const payload = toImport.map((r) => ({
         row: r.row,
@@ -375,6 +402,7 @@ const ImportPage: React.FC = () => {
       for (let i = 0; i < payload.length; i += IMPORT_CHUNK_SIZE) {
         const chunkIndex = Math.floor(i / IMPORT_CHUNK_SIZE) + 1;
         setImportProgress(`正在导入第 ${chunkIndex}/${totalChunks} 批…`);
+        setImportPercent(Math.round((chunkIndex / totalChunks) * 100));
         const chunk = payload.slice(i, i + IMPORT_CHUNK_SIZE);
         const res = await importInventory(chunk, {
           skipErrorHandler: true,
@@ -431,6 +459,7 @@ const ImportPage: React.FC = () => {
     } finally {
       setImporting(false);
       setImportProgress('');
+      setImportPercent(0);
     }
   };
 
@@ -616,8 +645,15 @@ const ImportPage: React.FC = () => {
               size={4}
             >
               {importProgress ? (
-                <Text type="secondary" style={{ fontSize: 13 }}>
-                  {importProgress}
+                <Space direction="vertical" size={2} style={{ minWidth: 220 }}>
+                  <Text type="secondary" style={{ fontSize: 13 }}>
+                    {importProgress}
+                  </Text>
+                  <Progress percent={importPercent} size="small" />
+                </Space>
+              ) : warningCount > 0 ? (
+                <Text type="warning" style={{ fontSize: 13 }}>
+                  请确认以上 {warningCount} 条警告后再导入
                 </Text>
               ) : null}
               <Button
@@ -626,7 +662,8 @@ const ImportPage: React.FC = () => {
                 disabled={okCount + warningCount === 0}
                 onClick={handleImport}
               >
-                确认导入（{okCount + warningCount} 条）
+                确认导入（{okCount + warningCount} 条
+                {warningCount > 0 ? `，含 ${warningCount} 条警告` : ''}）
               </Button>
             </Space>
           </div>

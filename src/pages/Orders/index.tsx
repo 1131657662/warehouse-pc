@@ -22,6 +22,7 @@ import OrderStatusTabs, {
 import OrderStatusTag from '@/components/Order/OrderStatusTag';
 import { getCustomerList } from '@/services/customers';
 import { cancelOrder, getOrderList } from '@/services/orders';
+import { showCountdownConfirm } from '@/utils/countdownConfirm';
 import { openOrderReport } from '@/utils/openOrderReport';
 import {
   createRowClickHandlers,
@@ -171,7 +172,8 @@ const OrdersList: React.FC = () => {
           label: '取消订单',
           danger: true,
           onClick: () => {
-            modal.confirm({
+            showCountdownConfirm({
+              confirm: modal.confirm,
               title: '确认取消该订单？',
               content: `订单号：${record.order_no}`,
               okText: '确认取消',

@@ -34,6 +34,7 @@ import { useEffect, useRef, useState } from 'react';
 import AppPageContainer from '@/components/AppPageContainer';
 import RollLifecycleDrawer from '@/components/Inventory/RollLifecycleDrawer';
 import { MODEL_SEARCH_PLACEHOLDER } from '@/constants/modelSearch';
+import { useInventoryWebSocket } from '@/hooks/useInventoryWebSocket';
 import { getCustomerList } from '@/services/customers';
 import {
   batchDeleteInventory,
@@ -122,6 +123,15 @@ const InventoryList: React.FC = () => {
     id?: number;
     rollNumber?: string;
   }>({});
+  const [wsCustomerId, setWsCustomerId] = useState<number | undefined>();
+
+  useInventoryWebSocket(
+    () => {
+      actionRef.current?.reload();
+    },
+    true,
+    wsCustomerId,
+  );
 
   // 加载四维度联动选项
   const loadSummaryOptions = async (
@@ -486,6 +496,12 @@ const InventoryList: React.FC = () => {
         formRef={formRef}
         rowKey="id"
         request={async (params) => {
+          const nextWsCustomerId = params.customer_id
+            ? Number(params.customer_id)
+            : undefined;
+          setWsCustomerId((prev) =>
+            prev === nextWsCustomerId ? prev : nextWsCustomerId,
+          );
           const res = await getInventoryList({
             current: params.current,
             pageSize: params.pageSize,

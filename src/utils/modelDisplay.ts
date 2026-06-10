@@ -1,3 +1,5 @@
+/** 与 warehouse-app/src/utils/modelDisplay.js 保持同步。 */
+
 /** 去尾零，保留有效小数位（支持 API 返回的长 DECIMAL 字符串） */
 export function stripDecimalZeros(
   value: number | string | null | undefined,

@@ -1,11 +1,12 @@
-import type { ProColumns } from '@ant-design/pro-components';
+import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { ProTable } from '@ant-design/pro-components';
 import { App, Button, Drawer, Table, Tag } from 'antd';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import AppPageContainer from '@/components/AppPageContainer';
 import RollLifecycleDrawer from '@/components/Inventory/RollLifecycleDrawer';
 import { formatModelLabel } from '@/components/Order/orderConstants';
 import { MODEL_SEARCH_PLACEHOLDER } from '@/constants/modelSearch';
+import { useInventoryWebSocket } from '@/hooks/useInventoryWebSocket';
 import { getCustomerList } from '@/services/customers';
 import {
   getInventoryList,
@@ -22,6 +23,7 @@ import {
 import { useProTableResize } from '@/utils/proTableConfig';
 
 const InventorySummaryPage: React.FC = () => {
+  const actionRef = useRef<ActionType | undefined>(undefined);
   const { message, modal } = App.useApp();
   const [customers, setCustomers] = useState<API.CustomerItem[]>([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -34,12 +36,21 @@ const InventorySummaryPage: React.FC = () => {
     id?: number;
     rollNumber?: string;
   }>({});
+  const [wsCustomerId, setWsCustomerId] = useState<number | undefined>();
 
   useEffect(() => {
     getCustomerList().then((res) => {
       if (res.success) setCustomers(res.data?.list || []);
     });
   }, []);
+
+  useInventoryWebSocket(
+    () => {
+      actionRef.current?.reload();
+    },
+    true,
+    wsCustomerId,
+  );
 
   const openRolls = async (row: API.InventorySummary) => {
     setActiveRow(row);
@@ -210,6 +221,7 @@ const InventorySummaryPage: React.FC = () => {
         {...tableProps}
         components={components}
         columns={columns}
+        actionRef={actionRef}
         headerTitle="库存型号汇总"
         toolBarRender={() => [
           <Button
@@ -224,6 +236,12 @@ const InventorySummaryPage: React.FC = () => {
           `${r.customer_id}|${r.product_name}|${r.weight}|${r.specification}`
         }
         request={async (params) => {
+          const nextWsCustomerId = params.customer_id
+            ? Number(params.customer_id)
+            : undefined;
+          setWsCustomerId((prev) =>
+            prev === nextWsCustomerId ? prev : nextWsCustomerId,
+          );
           const res = await getInventorySummary({
             customer_id: params.customer_id,
             keyword: params.keyword as string | undefined,

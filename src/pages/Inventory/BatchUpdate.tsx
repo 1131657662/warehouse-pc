@@ -8,6 +8,7 @@ import {
   App,
   Button,
   Modal,
+  Progress,
   Space,
   Table,
   Tag,
@@ -72,6 +73,7 @@ const InventoryBatchUpdate: React.FC = () => {
   const [rows, setRows] = useState<ParsedRow[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [progress, setProgress] = useState('');
+  const [progressPercent, setProgressPercent] = useState(0);
   const [customerCodeMap, setCustomerCodeMap] = useState<
     Map<string, { id: number; name: string }>
   >(new Map());
@@ -227,6 +229,7 @@ const InventoryBatchUpdate: React.FC = () => {
 
     setSubmitting(true);
     setProgress('');
+    setProgressPercent(0);
     try {
       const payload = toUpdate.map((r) => ({
         row: r.row,
@@ -254,6 +257,7 @@ const InventoryBatchUpdate: React.FC = () => {
       for (let i = 0; i < payload.length; i += CHUNK_SIZE) {
         const chunkIndex = Math.floor(i / CHUNK_SIZE) + 1;
         setProgress(`正在更新第 ${chunkIndex}/${totalChunks} 批…`);
+        setProgressPercent(Math.round((chunkIndex / totalChunks) * 100));
         const chunk = payload.slice(i, i + CHUNK_SIZE);
         const res = await batchUpdateInventory(chunk, {
           skipErrorHandler: true,
@@ -283,6 +287,7 @@ const InventoryBatchUpdate: React.FC = () => {
     } finally {
       setSubmitting(false);
       setProgress('');
+      setProgressPercent(0);
     }
   };
 
@@ -397,6 +402,13 @@ const InventoryBatchUpdate: React.FC = () => {
                 {submitting ? progress || '更新中…' : `确认更新 (${okCount})`}
               </Button>
             </Space>
+            {submitting ? (
+              <Progress
+                percent={progressPercent}
+                size="small"
+                style={{ maxWidth: 420, marginTop: 12 }}
+              />
+            ) : null}
             <Table
               size="small"
               columns={columns}
