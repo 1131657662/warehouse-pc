@@ -119,6 +119,13 @@ const OutboundScanTable: React.FC<Props> = ({
       render: (_, r) => formatTonFromPieceWeightKg(r.piece_weight),
     },
     {
+      title: '破损',
+      dataIndex: 'damaged',
+      width: 100,
+      ellipsis: true,
+      render: (v: string) => v || '-',
+    },
+    {
       title: '扫码人',
       dataIndex: 'scan_user_name',
       width: 90,
@@ -220,7 +227,7 @@ const OutboundScanTable: React.FC<Props> = ({
           showTotal: (t) => `共 ${t} 条`,
         }}
         size="middle"
-        scroll={{ x: 1200 }}
+        scroll={{ x: 1300 }}
         className="wh-outbound-log-table"
         locale={{ emptyText: '暂无出库记录，请前往出库作业扫码或挑选卷号' }}
       />

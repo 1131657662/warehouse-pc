@@ -155,6 +155,7 @@ declare namespace API {
   type AvailableRoll = {
     id: number;
     roll_number: string;
+    code: string;
     product_name: string;
     weight: number | null;
     piece_weight: number | null;

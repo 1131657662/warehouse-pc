@@ -300,10 +300,23 @@ const RollPickerDrawer: React.FC<Props> = ({
           },
           { title: '卷号', dataIndex: 'roll_number', width: 140 },
           {
+            title: '编号',
+            dataIndex: 'code',
+            width: 100,
+            render: (v: string) => v || '-',
+          },
+          {
             title: '件重(kg)',
             dataIndex: 'piece_weight',
             width: 90,
             render: (v: number | null) => formatPieceWeightDisplay(v),
+          },
+          {
+            title: '破损',
+            dataIndex: 'damaged',
+            width: 100,
+            ellipsis: true,
+            render: (v: string) => v || '-',
           },
           {
             title: '状态',

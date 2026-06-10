@@ -22,6 +22,7 @@ export type OrderExportRow = {
   规格: string;
   卷号: string;
   编号: string;
+  破损: string;
   '单件重量(吨)': string;
   扫码人: string;
   扫码时间: string;
@@ -61,6 +62,7 @@ export function exportOrderScanExcel(
       规格: log.specification || '',
       卷号: log.matched_roll_number || log.raw_barcode,
       编号: log.code || '',
+      破损: log.damaged || '',
       '单件重量(吨)': weightTon === '-' ? '' : weightTon,
       扫码人: log.scan_user_name || '',
       扫码时间: log.created_at || '',
@@ -84,6 +86,7 @@ export function exportOrderScanExcel(
       规格: '',
       卷号: '',
       编号: '',
+      破损: '',
       '单件重量(吨)': '',
       扫码人: '',
       扫码时间: '',
@@ -107,6 +110,7 @@ export function exportOrderScanExcel(
     { wch: 14 },
     { wch: 14 },
     { wch: 14 },
+    { wch: 12 },
     { wch: 12 },
     { wch: 10 },
     { wch: 20 },
