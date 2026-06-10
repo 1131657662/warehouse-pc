@@ -29,6 +29,7 @@ import {
   formatSpecDisplay,
   formatWeightDisplay,
 } from '@/utils/modelDisplay';
+import { useClientTablePagination } from '@/utils/useClientTablePagination';
 
 const { Dragger } = Upload;
 const { Text, Title } = Typography;
@@ -95,6 +96,15 @@ const InventoryBatchUpdate: React.FC = () => {
 
   const okCount = rows.filter((r) => r.status === 'ok').length;
   const errorCount = rows.filter((r) => r.status === 'error').length;
+
+  const previewPagination = useClientTablePagination(
+    'inventory-batch-update-preview',
+    {
+      defaultPageSize: 50,
+      pageSizeOptions: [20, 50, 100, 200],
+      resetDeps: [rows],
+    },
+  );
 
   const handleDownloadTemplate = () => {
     const ws = XLSX.utils.aoa_to_sheet([TEMPLATE_HEADERS]);
@@ -392,7 +402,7 @@ const InventoryBatchUpdate: React.FC = () => {
               columns={columns}
               dataSource={rows}
               scroll={{ x: 1200, y: 480 }}
-              pagination={{ pageSize: 50, showSizeChanger: true }}
+              pagination={previewPagination}
             />
           </>
         )}

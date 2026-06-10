@@ -31,6 +31,7 @@ import {
   formatWeightDisplay,
 } from '@/utils/modelDisplay';
 import { downloadAuthenticatedFile } from '@/utils/scanLogs';
+import { useClientTablePagination } from '@/utils/useClientTablePagination';
 
 const { Dragger } = Upload;
 const { Text, Title } = Typography;
@@ -131,6 +132,15 @@ const ImportPage: React.FC = () => {
   const okCount = rows.filter((r) => r.status === 'ok').length;
   const warningCount = rows.filter((r) => r.status === 'warning').length;
   const errorCount = rows.filter((r) => r.status === 'error').length;
+
+  const previewPagination = useClientTablePagination(
+    'inventory-import-preview',
+    {
+      defaultPageSize: 50,
+      pageSizeOptions: [20, 50, 100, 200],
+      resetDeps: [rows],
+    },
+  );
 
   // 下载模板
   const handleDownloadTemplate = () => {
@@ -573,15 +583,7 @@ const ImportPage: React.FC = () => {
             scroll={{ x: 1300 }}
             size="small"
             className="wh-outbound-log-table"
-            pagination={{
-              pageSize: 50,
-              defaultPageSize: 50,
-              showSizeChanger: true,
-              showQuickJumper: true,
-              pageSizeOptions: [20, 50, 100, 200],
-              showTotal: (total, range) =>
-                `第 ${range[0]}-${range[1]} 条，共 ${total} 条`,
-            }}
+            pagination={previewPagination}
           />
 
           {/* ④ 导入统计 */}

@@ -1,5 +1,6 @@
 import type { Key, MouseEvent } from 'react';
 
+export { useClientTablePagination } from './useClientTablePagination';
 export { useProTableResize } from './useResizableProColumns';
 
 /** 调整默认行高/列宽时递增，用于脱离旧的 localStorage 列宽缓存 */
@@ -7,14 +8,35 @@ export const PRO_TABLE_LAYOUT_REV = 'r2';
 
 const PAGE_SIZE_PREFIX = 'wh-pagesize:';
 
-function loadPageSize(persistenceKey: string): number {
+/** 从 localStorage 读取每页条数；allowed 存在时校验是否在可选列表内 */
+export function loadPersistedPageSize(
+  persistenceKey: string,
+  fallback: number,
+  allowed?: readonly number[],
+): number {
   try {
     const v = localStorage.getItem(PAGE_SIZE_PREFIX + persistenceKey);
     const n = v ? parseInt(v, 10) : 0;
-    return n > 0 ? n : 10;
+    if (n > 0) {
+      if (allowed && !allowed.includes(n)) return fallback;
+      return n;
+    }
   } catch {
-    return 10;
+    /* ignore */
   }
+  return fallback;
+}
+
+export function persistPageSize(persistenceKey: string, size: number) {
+  try {
+    localStorage.setItem(PAGE_SIZE_PREFIX + persistenceKey, String(size));
+  } catch {
+    /* ignore */
+  }
+}
+
+function loadPageSize(persistenceKey: string): number {
+  return loadPersistedPageSize(persistenceKey, 10);
 }
 
 /** 列配置持久化到 localStorage（列顺序、显隐、宽度） */
@@ -41,7 +63,7 @@ export function getDefaultProTablePagination(
     hideOnSinglePage: false,
     onShowSizeChange: persistenceKey
       ? (_: number, size: number) => {
-          try { localStorage.setItem(PAGE_SIZE_PREFIX + persistenceKey, String(size)); } catch { /* */ }
+          persistPageSize(persistenceKey, size);
         }
       : undefined,
     ...extra,
@@ -58,7 +80,8 @@ export function getDefaultProTableSearch(extra?: Record<string, unknown>) {
     searchGutter: [16, 12],
     searchText: '查询',
     resetText: '重置',
-    collapseRender: (collapsed: boolean) => (collapsed ? '展开筛选' : '收起筛选'),
+    collapseRender: (collapsed: boolean) =>
+      collapsed ? '展开筛选' : '收起筛选',
     submitterColSpanProps: { span: 8 },
     ...extra,
   };

@@ -8,6 +8,7 @@ import {
   formatTonFromPieceWeightKg,
   formatWeightDisplay,
 } from '@/utils/modelDisplay';
+import { useClientTablePagination } from '@/utils/useClientTablePagination';
 
 const { Text } = Typography;
 
@@ -54,6 +55,12 @@ const OutboundScanTable: React.FC<Props> = ({
     () => outboundRows.filter((r) => r.is_unplanned).length,
     [outboundRows],
   );
+
+  const pagination = useClientTablePagination('outbound-scan-table', {
+    defaultPageSize: 15,
+    pageSizeOptions: [10, 15, 20, 50, 100],
+    resetDeps: [keyword],
+  });
 
   const columns: ColumnsType<API.ScanLogItem> = [
     {
@@ -221,11 +228,7 @@ const OutboundScanTable: React.FC<Props> = ({
               }
             : undefined
         }
-        pagination={{
-          pageSize: 15,
-          showSizeChanger: true,
-          showTotal: (t) => `共 ${t} 条`,
-        }}
+        pagination={pagination}
         size="middle"
         scroll={{ x: 1300 }}
         className="wh-outbound-log-table"

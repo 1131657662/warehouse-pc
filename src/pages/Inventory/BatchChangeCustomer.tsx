@@ -24,6 +24,7 @@ import {
   BATCH_CHANGE_CUSTOMER_ALIASES,
   pickImportField,
 } from '@/utils/inventoryImportParse';
+import { useClientTablePagination } from '@/utils/useClientTablePagination';
 
 const { Dragger } = Upload;
 const { Text, Title } = Typography;
@@ -72,6 +73,15 @@ const InventoryBatchChangeCustomer: React.FC = () => {
 
   const okCount = rows.filter((r) => r.status === 'ok').length;
   const errorCount = rows.filter((r) => r.status === 'error').length;
+
+  const previewPagination = useClientTablePagination(
+    'inventory-batch-change-customer-preview',
+    {
+      defaultPageSize: 50,
+      pageSizeOptions: [20, 50, 100, 200],
+      resetDeps: [rows],
+    },
+  );
 
   const handleDownloadTemplate = () => {
     const ws = XLSX.utils.aoa_to_sheet([TEMPLATE_HEADERS]);
@@ -325,7 +335,7 @@ const InventoryBatchChangeCustomer: React.FC = () => {
               columns={columns}
               dataSource={rows}
               scroll={{ x: 800, y: 480 }}
-              pagination={{ pageSize: 50, showSizeChanger: true }}
+              pagination={previewPagination}
             />
           </>
         )}
