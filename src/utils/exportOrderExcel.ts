@@ -1,5 +1,8 @@
 import * as XLSX from 'xlsx';
-import { formatTonFromPieceWeightKg } from '@/utils/modelDisplay';
+import {
+  formatDamagedDisplay,
+  formatTonFromPieceWeightKg,
+} from '@/utils/modelDisplay';
 
 const STATUS_TEXT: Record<string, string> = {
   pending: '待处理',
@@ -62,7 +65,7 @@ export function exportOrderScanExcel(
       规格: log.specification || '',
       卷号: log.matched_roll_number || log.raw_barcode,
       编号: log.code || '',
-      破损: log.damaged || '',
+      破损: formatDamagedDisplay(log.damaged),
       '单件重量(吨)': weightTon === '-' ? '' : weightTon,
       扫码人: log.scan_user_name || '',
       扫码时间: log.created_at || '',

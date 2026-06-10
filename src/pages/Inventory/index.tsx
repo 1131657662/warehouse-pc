@@ -44,6 +44,7 @@ import {
   updateInventory,
 } from '@/services/inventory';
 import {
+  formatDamagedCell,
   formatPieceWeightDisplay,
   formatSpecDisplay,
   formatTonDisplay,
@@ -383,10 +384,11 @@ const InventoryList: React.FC = () => {
     {
       title: '破损',
       dataIndex: 'damaged',
-      width: 70,
-      align: 'center',
+      width: 100,
+      ellipsis: true,
       sorter: true,
       hideInSearch: true,
+      render: (_, r) => formatDamagedCell(r.damaged),
     },
     {
       title: '备注',

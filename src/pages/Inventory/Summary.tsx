@@ -13,6 +13,7 @@ import {
   refreshModelSummary,
 } from '@/services/inventory';
 import {
+  formatDamagedCell,
   formatPieceWeightDisplay,
   formatSpecDisplay,
   formatTonDisplay,
@@ -275,7 +276,13 @@ const InventorySummaryPage: React.FC = () => {
               width: 100,
               render: (v: number | null) => formatPieceWeightDisplay(v),
             },
-            { title: '破损', dataIndex: 'damaged', width: 80 },
+            {
+              title: '破损',
+              dataIndex: 'damaged',
+              width: 100,
+              ellipsis: true,
+              render: (v: string) => formatDamagedCell(v),
+            },
             {
               title: '状态',
               dataIndex: 'reserve_status',

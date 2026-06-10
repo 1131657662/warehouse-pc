@@ -3,6 +3,7 @@ import { Button, Input, Popconfirm, Space, Table, Tag, Typography } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { useMemo, useState } from 'react';
 import {
+  formatDamagedCell,
   formatPieceWeightDisplay,
   formatSpecDisplay,
   formatTonFromPieceWeightKg,
@@ -136,7 +137,7 @@ const OutboundScanTable: React.FC<Props> = ({
         dataIndex: 'damaged',
         width: 100,
         ellipsis: true,
-        render: (v: string) => v || '-',
+        render: (v: string) => formatDamagedCell(v),
       },
       {
         title: '扫码人',

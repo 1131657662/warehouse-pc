@@ -2,7 +2,10 @@ import { App, Button, Drawer, Input, Modal, Space, Table, Tag } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
 import { MODEL_SEARCH_PLACEHOLDER } from '@/constants/modelSearch';
 import { getAvailableRolls, manualOutbound } from '@/services/orders';
-import { formatPieceWeightDisplay } from '@/utils/modelDisplay';
+import {
+  formatDamagedCell,
+  formatPieceWeightDisplay,
+} from '@/utils/modelDisplay';
 import { shouldIgnoreProTableRowClick } from '@/utils/proTableConfig';
 import { formatModelLabel } from './orderConstants';
 
@@ -316,7 +319,7 @@ const RollPickerDrawer: React.FC<Props> = ({
             dataIndex: 'damaged',
             width: 100,
             ellipsis: true,
-            render: (v: string) => v || '-',
+            render: (v: string) => formatDamagedCell(v),
           },
           {
             title: '状态',

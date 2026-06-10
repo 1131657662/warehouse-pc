@@ -240,6 +240,24 @@ export function formatSpecDisplay(
   return text;
 }
 
+/** 破损展示：保留文字描述（如破50层），空/纯数字占位视为无破损 */
+export function formatDamagedDisplay(
+  value: string | number | null | undefined,
+): string {
+  if (value == null) return '';
+  const text = String(value).trim();
+  if (!text || text === '0' || text === '0.0') return '';
+  if (/^\d+(\.\d+)?$/.test(text)) return '';
+  return text;
+}
+
+/** 破损列：无破损显示 - */
+export function formatDamagedCell(
+  value: string | number | null | undefined,
+): string {
+  return formatDamagedDisplay(value) || '-';
+}
+
 /** 型号标签：品名 / 克重g / 门幅mm */
 export function formatModelLabel(
   product_name: string,

@@ -4,7 +4,10 @@ import { useEffect, useState } from 'react';
 import OrderStatusTag from '@/components/Order/OrderStatusTag';
 import { formatModelLabel } from '@/components/Order/orderConstants';
 import { getInventoryLifecycle } from '@/services/inventory';
-import { formatPieceWeightDisplay } from '@/utils/modelDisplay';
+import {
+  formatDamagedCell,
+  formatPieceWeightDisplay,
+} from '@/utils/modelDisplay';
 
 const { Link, Text } = Typography;
 
@@ -109,7 +112,7 @@ const RollLifecycleDrawer: React.FC<Props> = ({
                 )}
               </Descriptions.Item>
               <Descriptions.Item label="破损" span={2}>
-                {inv.damaged || '—'}
+                {formatDamagedCell(inv.damaged)}
               </Descriptions.Item>
               {inv.remark ? (
                 <Descriptions.Item label="备注" span={2}>
