@@ -9,6 +9,12 @@ export type ClientTablePaginationOptions = {
   resetDeps?: unknown[];
 };
 
+export type ClientTablePaginationResult = {
+  pagination: TablePaginationConfig;
+  current: number;
+  pageSize: number;
+};
+
 /**
  * Ant Design Table 客户端分页（受控 current/pageSize + localStorage 记忆条数）
  * 用于非 ProTable 的全量 dataSource 表格。
@@ -16,7 +22,7 @@ export type ClientTablePaginationOptions = {
 export function useClientTablePagination(
   persistenceKey: string,
   options: ClientTablePaginationOptions = {},
-): TablePaginationConfig {
+): ClientTablePaginationResult {
   const {
     defaultPageSize = 10,
     pageSizeOptions = [10, 20, 50, 100, 200],
@@ -44,15 +50,19 @@ export function useClientTablePagination(
 
   return useMemo(
     () => ({
+      pagination: {
+        current,
+        pageSize,
+        showSizeChanger: true,
+        showQuickJumper: true,
+        pageSizeOptions,
+        showTotal: (total: number, range: [number, number]) =>
+          `第 ${range[0]}-${range[1]} 条，共 ${total} 条`,
+        hideOnSinglePage: false,
+        onChange,
+      },
       current,
       pageSize,
-      showSizeChanger: true,
-      showQuickJumper: true,
-      pageSizeOptions,
-      showTotal: (total: number, range: [number, number]) =>
-        `第 ${range[0]}-${range[1]} 条，共 ${total} 条`,
-      hideOnSinglePage: false,
-      onChange,
     }),
     [current, pageSize, pageSizeOptions, onChange],
   );

@@ -133,7 +133,7 @@ const ImportPage: React.FC = () => {
   const warningCount = rows.filter((r) => r.status === 'warning').length;
   const errorCount = rows.filter((r) => r.status === 'error').length;
 
-  const previewPagination = useClientTablePagination(
+  const { pagination: previewPagination } = useClientTablePagination(
     'inventory-import-preview',
     {
       defaultPageSize: 50,

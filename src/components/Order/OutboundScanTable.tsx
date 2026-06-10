@@ -56,114 +56,122 @@ const OutboundScanTable: React.FC<Props> = ({
     [outboundRows],
   );
 
-  const pagination = useClientTablePagination('outbound-scan-table', {
-    defaultPageSize: 15,
-    pageSizeOptions: [10, 15, 20, 50, 100],
-    resetDeps: [keyword],
-  });
+  const { pagination, current, pageSize } = useClientTablePagination(
+    'outbound-scan-table',
+    {
+      defaultPageSize: 15,
+      pageSizeOptions: [10, 15, 20, 50, 100],
+      resetDeps: [keyword],
+    },
+  );
 
-  const columns: ColumnsType<API.ScanLogItem> = [
-    {
-      title: '序号',
-      width: 56,
-      render: (_, __, i) => (
-        <Text type="secondary">{outboundRows.length - i}</Text>
-      ),
-    },
-    {
-      title: '扫码时间',
-      dataIndex: 'created_at',
-      width: 170,
-      render: (v: string) => <Text strong>{v || '-'}</Text>,
-    },
-    {
-      title: '品名',
-      dataIndex: 'product_name',
-      width: 120,
-      render: (v: string, r) => (
-        <Space size={4}>
-          {v}
-          {r.is_unplanned ? <Tag color="orange">计划外</Tag> : null}
-        </Space>
-      ),
-    },
-    {
-      title: '克重',
-      dataIndex: 'weight',
-      width: 80,
-      align: 'right',
-      render: (v) => formatWeightDisplay(v),
-    },
-    {
-      title: '规格',
-      dataIndex: 'specification',
-      width: 110,
-      render: (v) => formatSpecDisplay(v),
-    },
-    {
-      title: '卷号',
-      dataIndex: 'matched_roll_number',
-      width: 130,
-      render: (v: string, r) => v || r.raw_barcode || '-',
-    },
-    {
-      title: '编号',
-      dataIndex: 'code',
-      width: 100,
-      render: (v: string) => v || '-',
-    },
-    {
-      title: '件重(kg)',
-      dataIndex: 'piece_weight',
-      width: 90,
-      align: 'right',
-      render: (v) => formatPieceWeightDisplay(v),
-    },
-    {
-      title: '吨位',
-      width: 80,
-      align: 'right',
-      render: (_, r) => formatTonFromPieceWeightKg(r.piece_weight),
-    },
-    {
-      title: '破损',
-      dataIndex: 'damaged',
-      width: 100,
-      ellipsis: true,
-      render: (v: string) => v || '-',
-    },
-    {
-      title: '扫码人',
-      dataIndex: 'scan_user_name',
-      width: 90,
-    },
-    {
-      title: '匹配',
-      width: 88,
-      render: (_, r) =>
-        r.is_fuzzy ? (
-          <Tag color="orange">模糊</Tag>
-        ) : (
-          <Tag color="success">精确</Tag>
+  const columns: ColumnsType<API.ScanLogItem> = useMemo(
+    () => [
+      {
+        title: '序号',
+        width: 56,
+        render: (_, __, i) => (
+          <Text type="secondary">
+            {outboundRows.length - ((current - 1) * pageSize + i)}
+          </Text>
         ),
-    },
-    {
-      title: '操作',
-      width: 72,
-      fixed: 'right',
-      render: (_, r) =>
-        canRevoke && onRevoke ? (
-          <Popconfirm
-            title="撤销该卷出库？"
-            onConfirm={() => onRevoke(r.matched_roll_number || r.raw_barcode)}
-          >
-            <Button type="link" danger size="small">
-              撤销
-            </Button>
-          </Popconfirm>
-        ) : null,
-    },
-  ];
+      },
+      {
+        title: '扫码时间',
+        dataIndex: 'created_at',
+        width: 170,
+        render: (v: string) => <Text strong>{v || '-'}</Text>,
+      },
+      {
+        title: '品名',
+        dataIndex: 'product_name',
+        width: 120,
+        render: (v: string, r) => (
+          <Space size={4}>
+            {v}
+            {r.is_unplanned ? <Tag color="orange">计划外</Tag> : null}
+          </Space>
+        ),
+      },
+      {
+        title: '克重',
+        dataIndex: 'weight',
+        width: 80,
+        align: 'right',
+        render: (v) => formatWeightDisplay(v),
+      },
+      {
+        title: '规格',
+        dataIndex: 'specification',
+        width: 110,
+        render: (v) => formatSpecDisplay(v),
+      },
+      {
+        title: '卷号',
+        dataIndex: 'matched_roll_number',
+        width: 130,
+        render: (v: string, r) => v || r.raw_barcode || '-',
+      },
+      {
+        title: '编号',
+        dataIndex: 'code',
+        width: 100,
+        render: (v: string) => v || '-',
+      },
+      {
+        title: '件重(kg)',
+        dataIndex: 'piece_weight',
+        width: 90,
+        align: 'right',
+        render: (v) => formatPieceWeightDisplay(v),
+      },
+      {
+        title: '吨位',
+        width: 80,
+        align: 'right',
+        render: (_, r) => formatTonFromPieceWeightKg(r.piece_weight),
+      },
+      {
+        title: '破损',
+        dataIndex: 'damaged',
+        width: 100,
+        ellipsis: true,
+        render: (v: string) => v || '-',
+      },
+      {
+        title: '扫码人',
+        dataIndex: 'scan_user_name',
+        width: 90,
+      },
+      {
+        title: '匹配',
+        width: 88,
+        render: (_, r) =>
+          r.is_fuzzy ? (
+            <Tag color="orange">模糊</Tag>
+          ) : (
+            <Tag color="success">精确</Tag>
+          ),
+      },
+      {
+        title: '操作',
+        width: 72,
+        fixed: 'right',
+        render: (_, r) =>
+          canRevoke && onRevoke ? (
+            <Popconfirm
+              title="撤销该卷出库？"
+              onConfirm={() => onRevoke(r.matched_roll_number || r.raw_barcode)}
+            >
+              <Button type="link" danger size="small">
+                撤销
+              </Button>
+            </Popconfirm>
+          ) : null,
+      },
+    ],
+    [canRevoke, current, onRevoke, outboundRows.length, pageSize],
+  );
 
   const bulkExtra = (
     <Space wrap>

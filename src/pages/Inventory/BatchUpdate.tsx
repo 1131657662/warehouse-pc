@@ -97,7 +97,7 @@ const InventoryBatchUpdate: React.FC = () => {
   const okCount = rows.filter((r) => r.status === 'ok').length;
   const errorCount = rows.filter((r) => r.status === 'error').length;
 
-  const previewPagination = useClientTablePagination(
+  const { pagination: previewPagination } = useClientTablePagination(
     'inventory-batch-update-preview',
     {
       defaultPageSize: 50,
